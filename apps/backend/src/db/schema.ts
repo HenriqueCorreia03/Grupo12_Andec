@@ -37,6 +37,8 @@ export const customerOrder = pgTable('customer_order', {
   size: doublePrecision('size'),
   /** Escala 215–305: mantida tal como está, "escala por confirmar". */
   sizeScaleUnconfirmed: boolean('size_scale_unconfirmed').notNull(),
+  /** Tamanho fora de todas as escalas conhecidas (mantido tal como está). */
+  sizeOutOfKnownScales: boolean('size_out_of_known_scales').notNull().default(false),
   quantity: integer('quantity').notNull(),
   /** Hora local, sem fuso horário. */
   createdAt: timestamp('created_at', { mode: 'string' }).notNull(),

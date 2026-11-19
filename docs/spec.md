@@ -229,6 +229,7 @@ Cada história está marcada como **essencial** (entra na primeira versão) ou *
   - No CO, os códigos 35, 45, …, 125 passam a 3,5 … 12,5. O PW já escreve 3.5 … 12.5.
   - Os inteiros 1–16 ficam iguais.
   - A escala 215–305 fica tal como está, marcada como "escala por confirmar". Existe nos dois ficheiros: 2 703 linhas no CO e 13 380 no PW.
+  - Qualquer outro valor fica tal como está e é marcado como "fora das escalas conhecidas", para ser contado na página de qualidade (decidido no ticket 01; 0 linhas no dataset completo).
   - Tamanho vazio (16 linhas no CO) = `nulo`. A linha conta nas unidades e no ABC, mas não liga ao PW.
 - **Duplicados no CO.** As linhas idênticas em todas as colunas são linhas reais e contam todas (2 559 linhas duplicadas). O ETL marca-as, para a sensibilidade "sem duplicados" na página de qualidade.
 - **PW: 1 linha = 1 unidade.** As 215 192 linhas têm quantidade 1, e 102 201 são idênticas a outra. Nenhuma regra de duplicados se aplica ao PW.

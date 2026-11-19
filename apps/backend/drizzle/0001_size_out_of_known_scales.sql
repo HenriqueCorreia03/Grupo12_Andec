@@ -1,0 +1,1 @@
+ALTER TABLE "customer_order" ADD COLUMN "size_out_of_known_scales" boolean DEFAULT false NOT NULL;

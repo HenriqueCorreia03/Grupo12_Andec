@@ -54,6 +54,7 @@ export async function loadCustomerOrder(tx: Database, dataDir: string): Promise<
         reference: referenceT,
         size: normalizedSize.size,
         sizeScaleUnconfirmed: normalizedSize.scaleUnconfirmed,
+        sizeOutOfKnownScales: normalizedSize.outOfKnownScales,
         quantity: units,
         createdAt: parseCreationDate(creationDateT),
         waveNumber: waveNumberT,
