@@ -1,0 +1,19 @@
+{
+  "name": "projeto3-andec",
+  "private": true,
+  "description": "Dashboard de prioridades de operação do armazém de calçado (TP3 ANDEC/PROPL).",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "apps/backend",
+    "apps/frontend"
+  ],
+  "scripts": {
+    "etl": "npm run etl --workspace backend",
+    "test": "npm run test:e2e --workspace backend",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev:backend": "npm run start:dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend"
+  }
+}
