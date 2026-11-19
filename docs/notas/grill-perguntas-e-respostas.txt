@@ -1,0 +1,314 @@
+GRILL-WITH-DOCS - PERGUNTAS E RESPOSTAS
+Projeto TP3: Armazém de calçado (ANDEC/PROPL, ISEP x Deloitte)
+
+Para cada pergunta: a proposta do grill e a resposta final da equipa
+(combinação das duas análises feitas em paralelo).
+
+======================================================================
+RONDA 1
+======================================================================
+
+----------------------------------------------------------------------
+Q1 - Decisão central: como se compara (a) com (b)?
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+O objetivo é dizer qual das alavancas tem mais potencial. Os dados só
+permitem medir o estado atual (dispersão de localizações, ondas
+desaproveitadas, pedidos divididos), não o ganho de uma alavanca. O
+dashboard mostra, para cada alavanca, o "espaço de melhoria observado":
+para (a), a dispersão por onda e a concentração do ABC; para (b), a % de
+pedidos divididos e a ocupação das ondas. Sempre rotulado como potencial,
+nunca como ganho esperado. A comparação fica numa matriz impacto x esforço
+x robustez da evidência, escala de 1 a 3, com justificação escrita por
+critério.
+
+RESPOSTA:
+Sim + ajuste: impacto e robustez vêm de indicadores medidos com regra
+explícita para 1/2/3 (impacto = % de unidades/pedidos afetados; robustez =
+% dos dados com problemas, ex. RC-01, duplicados). O esforço não é
+mensurável com estes dados: fica rotulado como juízo qualitativo da equipa,
+com justificação escrita.
+
+----------------------------------------------------------------------
+Q2 - Ordem de prioridade dos artigos (alavanca a)
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+Os critérios propostos eram unidades encomendadas, número de ondas em que o
+artigo aparece e distância atual às zonas mais usadas. A distância é uma
+estimativa, por isso propõe substituí-la por um critério medido: a % das
+recolhas do artigo feitas fora das zonas de maior picking (ex.: H-P).
+Ranking = unidades x ondas, com a % fora das zonas principais como
+desempate ou filtro.
+
+RESPOSTA:
+Sim + ajuste: sem distâncias. O desempate "% fora de H-P" não distingue
+nada (~99% das recolhas A em localizações conhecidas já são em H-P); usa o
+nº de localizações distintas por artigo (mediana 55 nos A). Critério
+principal: paragens (onda x localização) em vez de unidades x ondas.
+
+----------------------------------------------------------------------
+Q3 - Ordem de prioridade das ondas, períodos e regras (alavanca b)
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+Priorizar por volume afetado e não por percentagem: ranking por "pedidos
+divididos (número absoluto)" por período (mês, dia da semana, hora), com a
+ocupação da onda como segundo critério.
+
+RESPOSTA:
+Sim + ajuste: nas comparações entre meses usa valores por dia com
+atividade, em todos os meses (variam entre 13 e 21 dias), não só em
+janeiro e outubro.
+
+----------------------------------------------------------------------
+Q4 - Duplicados no Customer_Order
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+2559 linhas duplicadas; em 700 ondas, sem duplicados, o picking tem mais
+unidades do que as encomendas, o que sugere que parte dos duplicados são
+linhas reais. Manter as linhas idênticas como reais, mostrar na página de
+qualidade o ABC e as unidades por pedido com e sem duplicados, e confirmar
+com um script antes de fechar a regra.
+
+RESPOSTA:
+Sim: manter os duplicados como linhas reais (com duplicados o Picking_Wave
+bate em 777 de 782 casos; sem duplicados em 0). Corre o script para
+confirmar e investiga as outras causas da diferença de totais (77 ondas sem
+picking, 10 referências nunca recolhidas, quantidades a zero).
+
+----------------------------------------------------------------------
+Q5 - Unidade do artigo no ABC
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+ABC principal por referência (comparável com o ABCCOD do Product.csv) e,
+como drill-down, o perfil de tamanhos de cada referência A. Normalizar os
+códigos 35...125 para 3,5...12,5; marcar a escala 215-305 como "por
+confirmar" (pergunta ao docente).
+
+RESPOSTA:
+Sim + ajuste: ABC por referência, mas não assumas uma localização por SKU
+(84% dos SKUs saem de mais de uma localização). Regista na qualidade dos
+dados as 10 referências encomendadas que nunca aparecem no Picking_Wave.
+
+----------------------------------------------------------------------
+Q6 - Período do ABC e estabilidade (pergunta 3)
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+ABC principal sobre todo o período (5/1/2023 a 19/10/2023), limiares
+80/15/5 % das unidades. ABC mensal independente só para medir a
+estabilidade (% de artigos que mudam de classe entre meses consecutivos).
+Excluir os meses 1 e 10 (parciais) ou mostrá-los com aviso. Excluir da
+estabilidade os artigos com menos de N unidades por mês.
+
+RESPOSTA:
+Sim + ajuste: não excluas janeiro e outubro; o ABC mensal usa
+percentagens, basta assinalá-los como meses parciais.
+
+----------------------------------------------------------------------
+Q7 - Desafio à pergunta 1: o ABC concentrado chega para decidir a zona de
+acesso rápido?
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+Reformular a pergunta 1 para "os artigos A estão a ser recolhidos nas zonas
+mais usadas, ou espalhados por mais zonas do que o necessário?", com a
+decisão de criar uma zona de acesso rápido só se houver artigos A fora das
+zonas principais.
+
+RESPOSTA:
+Não: é circular (~99% das recolhas A já são em H-P). Reformula para "os
+artigos A estão concentrados em poucas localizações ou espalhados por
+muitas (mediana de 55 localizações por artigo A), e que papel tem o RC-01
+(onde ~89% das unidades são de artigos A)?". Decisão: consolidar os A em
+menos localizações e/ou criar ou alargar uma zona de acesso rápido. O que é
+o RC-01 fica como pergunta ao docente.
+
+======================================================================
+RONDA 2
+======================================================================
+
+----------------------------------------------------------------------
+Q8 - Base de cada indicador
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+ABC, unidades por pedido, setor e ocupação da onda usam o Customer_Order;
+localizações, paragens, zonas e dispersão usam o Picking_Wave. As 77 ondas
+sem picking entram nos primeiros e ficam fora dos segundos. O "recolhido /
+encomendado" (7 329 un. por explicar) aparece na página de qualidade como
+indicador de cumprimento. Cada indicador indica a fonte na legenda.
+
+RESPOSTA:
+Sim + ajuste: a ocupação da onda usa o Picking_Wave, não o Customer_Order
+(no Customer_Order há ondas com até 192 un., o que daria 800% de ocupação;
+as 77 ondas sem picking nunca saíram). Pedidos por onda e pedidos
+divididos ficam no Customer_Order, o único com número de pedido. O picking
+nunca excede as encomendas, mas a diferença que contámos é 12 258 un. nas
+ondas com picking (+745 nas 77 ondas = 13 003), não 7 329. Mostra como
+chegaste a esse número.
+
+----------------------------------------------------------------------
+Q9 - RC-01 e localizações fora do Storage_Location
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+Ficam fora das percentagens por zona; aparecem sempre como categoria "não
+mapeada" visível (RC-01 em separado); contam como paragens e localizações
+distintas; entram no critério de robustez da Q1 (~11% das unidades); a
+pergunta ao docente sobre o RC-01 fica na lista de limitações.
+
+RESPOSTA:
+Sim + ajuste: o RC-01 tem 155 referências diferentes, por isso deve ser uma
+área e não um único sítio. Contá-lo como 1 localização distinta subestima
+a dispersão; regista isso como limitação.
+
+----------------------------------------------------------------------
+Q10 - Semântica dos filtros
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+Filtros globais (período, referência, classe ABC, zona, operador)
+aplicados ao nível da linha; indicadores por pedido ou onda recalculados só
+com as linhas que passam o filtro, com aviso visível na interface. Período
+= data de criação.
+
+RESPOSTA:
+Sim + ajustes: (1) o Picking_Wave não tem data: o período dos indicadores
+de picking vem da data da onda (cada onda tem pedidos de um único dia, já
+verificado). (2) O operador não é o mesmo nos dois ficheiros: 88 ondas têm
+vários operadores no Picking_Wave e só 1 no Customer_Order, 102 ondas têm
+operadores diferentes, e Operator_12 e Operator_13 só existem no
+Customer_Order. Operador = quem recolheu (Picking_Wave) nos indicadores de
+picking; nos de encomenda chama-lhe "operador atribuído" ou desativa o
+filtro. (3) O Customer_Order não tem localização: para o filtro de zona,
+liga as linhas ao Picking_Wave por onda + referência + tamanho (~97-98%
+das linhas com correspondência ligam a uma só zona); define uma regra para
+as que ligam a várias zonas e mostra a % na página de qualidade; as
+unidades encomendadas mas não recolhidas ficam "sem zona". (4) O filtro de
+classe ABC usa a classe global do período completo, fixa, para um artigo
+não mudar de classe quando se muda o período.
+
+----------------------------------------------------------------------
+Q11 - Páginas e interações
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+Visão geral (5 indicadores mínimos, matriz das duas alavancas, comparação
+mensal); Artigos, ABC e localizações (alavanca a); Ondas e pedidos
+(alavanca b); Qualidade dos dados e limitações. Tooltip com definição e
+fonte do indicador e contagem de linhas excluídas. Drill-down ABC ->
+classe -> referência -> tamanhos. Drill-through de uma onda no gráfico de
+ocupação para a lista de pedidos e linhas dessa onda, com localizações.
+
+RESPOSTA:
+Sim + ajustes: (1) o drill-through leva a outra das 4 páginas com o
+contexto aplicado (ex.: clicar numa onda abre a página "Ondas e pedidos"
+filtrada por essa onda), sem criar uma 5.ª página, porque o enunciado
+limita a página principal + até 3 subpáginas. (2) O tooltip mostra também
+o valor e a variação face ao período anterior. (3) A comparação mensal na
+Visão geral usa valores por dia com atividade.
+
+RESTO DO ÂMBITO (respondido nesta ronda):
+(1) Exemplo à mão = uma onda real com 2-3 pedidos, os 5 indicadores
+mínimos calculados em Excel, que passa a teste de aceitação. (2)
+Verificações das interações no formato "faço X -> espero ver Y" para cada
+filtro, drill-down e drill-through. (3) Simulação de distâncias fora do
+âmbito desta versão; extensão opcional, sempre rotulada como estimativa.
+
+======================================================================
+RONDA 3
+======================================================================
+
+NOTA DO GRILL ANTES DAS PERGUNTAS:
+Explicação das 7 329 un.: 12 258 un. de diferença nas ondas com picking =
+4 929 un. das 10 referências nunca recolhidas + 7 329 un. sem causa
+conhecida, em 2 128 ondas (81 das 198 referências elegíveis; as 10 maiores
+concentram 70%). Fica na página de qualidade como "recolhido <
+encomendado"; a causa vai para as perguntas ao docente.
+Onda proposta para o exemplo à mão: 33444 (10/01/2023, Operator_8), 3
+pedidos (90412, 90413, 90414), 7 un., 4 localizações na zona K.
+(Números verificados nos dados pela equipa.)
+
+----------------------------------------------------------------------
+Q12 - Cobertura do exemplo à mão
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+Três fixtures: a onda 33444 (tamanho médio, pedidos por onda, setor,
+ocupação, dispersão); um conjunto sintético de ~6 referências para dar A,
+B e C exatos a 80/15/5 %, com um caso de empate; um par de ondas reais com
+um pedido dividido, a procurar na fase da especificação. Cada fixture traz
+a folha de Excel e vira teste de aceitação.
+
+RESPOSTA:
+Sim + ajustes: (1) a onda 33444 está certa (3 pedidos, 7 un., 4
+localizações na zona K); nota que o AHR20O tam. 12 aparece em dois pedidos
+(90412 e 90413), por isso testa também a ligação pedido <-> picking. (2)
+Par real para os pedidos divididos: pedido 100147, dividido entre as ondas
+35679 (só esse pedido, 23 un.) e 35678 (2 pedidos, 24 un.); sem
+duplicados, zeros nem referências nunca recolhidas, e encomendado =
+recolhido. Dá 50% de pedidos divididos e testa a ocupação de ondas quase
+cheias e cheias (96% e 100%). Confirma nos dados. (3) No ABC sintético,
+inclui o artigo que atravessa o limiar dos 80% e define a regra (fica em A
+ou em B?), além do empate de unidades (ordem de desempate, ex.: código da
+referência). (4) Acrescenta uma 4.ª fixture sintética com os casos
+difíceis: uma linha duplicada real (conta duas vezes), uma quantidade 0,
+um tamanho vazio, um código 105 -> 10,5, uma linha no RC-01 e unidades
+encomendadas mas não recolhidas. A 33444 foi escolhida por não ter nenhum
+destes casos, por isso não os testa.
+
+----------------------------------------------------------------------
+Q13 - Linhas ligadas a várias zonas
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+Quando uma linha do Customer_Order liga a várias zonas, repartir as
+unidades proporcionalmente ao recolhido em cada zona (os totais não mudam).
+A parte encomendada e não recolhida vai para "sem zona". A página de
+qualidade mostra a % de linhas repartidas.
+
+RESPOSTA:
+Sim: repartição proporcional, com a % visível na página de qualidade (~2%
+das ligações caem em mais de uma zona). Regras: arredondar só na
+apresentação, nunca nos cálculos; com filtro de zona, um pedido conta
+nessa zona se tiver mais de 0 unidades atribuídas a ela; a mesma
+repartição aplica-se quando um SKU de uma onda pertence a vários pedidos.
+
+----------------------------------------------------------------------
+Q14 - "Dia com atividade" e ruído do ABC mensal
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+Dia com atividade = dia com pelo menos 1 pedido criado (domingos
+incluídos, 348 pedidos). Na estabilidade do ABC, excluir do denominador as
+referências com menos de 10 unidades no mês, e mostrar a sensibilidade ao
+limiar (5 / 10 / 20).
+
+RESPOSTA:
+Sim + ajuste: incluir os domingos está bem (5 domingos com pedidos, média
+de 70 pedidos contra 187 nos dias úteis), mas assinala-os no gráfico por
+dia da semana. No limiar das 10 un., mostra quantas combinações
+referência-mês ficam de fora (5 un. ~16%, 10 un. ~24%, 20 un. ~37%). O
+"dia com atividade" usa a mesma definição nos indicadores de picking (via
+data da onda).
+
+----------------------------------------------------------------------
+Q15 - Limitações e perguntas ao docente
+----------------------------------------------------------------------
+PROPOSTA DO GRILL:
+Lista fixa na página de qualidade e cópia em docs/: o que é o RC-01;
+escala de tamanhos 215-305; origem do ABCCOD; causa das 7 329 un.
+recolhidas a menos; o K-23-40 com z = 3; capacidade da onda (alvo ou
+limite); operador atribuído vs operador que recolheu (102 ondas diferem).
+
+RESPOSTA:
+Sim + separar em duas listas.
+Perguntas ao docente: as 7 propostas + o que são C-102, ZN-COR, EX-11 e
+K-26-20 + a localização do ponto de partida/expedição (só se a distância
+voltar a entrar).
+Limitações conhecidas: Picking_Wave sem data nem número de pedido; sem
+tempos de picking (operador = carga, não desempenho); 77 ondas sem picking
+(745 un.); 10 referências nunca recolhidas (4 929 un. em ondas com
+picking), separadas das 7 329; regra dos duplicados e sensibilidade; ~5%
+de linhas do Customer_Order sem correspondência no picking; setor sempre
+"PF"; pedidos ao domingo (5 dias) e às 20h (337 pedidos em apenas 4 dias).
+
+EXTRA: a simulação de distâncias fica fora do âmbito desta versão.
+
+======================================================================
+PRÓXIMO PASSO
+======================================================================
+Fase de fecho do grill: rever a lista do que ficou assumido e confirmar o
+entendimento comum em equipa. Depois: to-spec (especificação em docs/) e
+to-tickets.
