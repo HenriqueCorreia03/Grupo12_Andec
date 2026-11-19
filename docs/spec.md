@@ -264,7 +264,7 @@ Cada história está marcada como **essencial** (entra na primeira versão) ou *
 | Indicador | Definição e fórmula | Fonte | Unidade | Casos-limite |
 |---|---|---|---|---|
 | **Classificação ABC** | Unidades encomendadas por referência (linhas > 0 de pedidos válidos). Ordenar por unidades (decrescente) e, em caso de empate, por código da referência (crescente, ordem de caracteres). Acumulado *antes* da referência = soma das referências anteriores ÷ total. **A** se acumulado antes < 80 %; **B** se < 95 %; **C** no resto. A referência que atravessa um limiar fica na classe superior. | CO | classe por referência; nº de referências e % de unidades por classe | Duplicados contam. Tamanho vazio conta. Referências sem unidades no período não são classificadas nesse período ("sem procura no período"). O ABCCOD do `Product` é só contraste, não verificação. |
-| **Tamanho médio da encomenda** | Σ unidades ÷ nº de pedidos válidos. Mostrar também mediana, p90 e histograma. | CO | unidades/pedido | Pedidos com 0 un. fora. Com filtros: unidades das linhas que passam ÷ pedidos com > 0 un. nessas linhas. |
+| **Tamanho médio da encomenda** | Σ unidades ÷ nº de pedidos válidos. Mostrar também mediana, p90 e histograma. Mediana e p90 são calculados sobre o total de unidades de cada pedido válido, com o **método contínuo** (`percentile_cont` no PostgreSQL), o mesmo das funções MEDIANA e PERCENTIL.INC do Excel. | CO | unidades/pedido | Pedidos com 0 un. fora. Com filtros: unidades das linhas que passam ÷ pedidos com > 0 un. nessas linhas. |
 | **Pedidos médios por onda** | Média, sobre as ondas, do nº de pedidos válidos distintos com linhas > 0 na onda. Um pedido dividido conta em cada onda onde aparece. Mostrar mediana e nº de ondas com 1 pedido. | CO | pedidos/onda | Inclui as 77 ondas sem picking, com nota no tooltip: "universo de ondas = CO; a ocupação usa o PW". |
 | **Participação por setor** | Unidades do setor ÷ unidades totais × 100. | CO + `Product` | % | Nos dados reais dá sempre PF = 100 %; a limitação é explicada. |
 | **Pedidos multissetor** | Pedidos válidos com referências (linhas > 0) de ≥ 2 setores ÷ pedidos válidos × 100. | CO + `Product` | % | Nos dados reais dá sempre 0 %; testado com um 2.º setor na fixture sintética. |
@@ -406,6 +406,7 @@ Dados: 10/01/2023 11:05; Operator_8 nos dois ficheiros; pedidos 90412 (2 un.), 9
 | Verificação | Esperado |
 |---|---|
 | Tamanho médio | 7 ÷ 3 = 2,3333… |
+| Mediana; p90 do tamanho (método contínuo) | 2; 2,8 (totais por pedido 2, 2, 3 → 2 + 0,8 × (3 − 2)) |
 | Pedidos por onda | 3 |
 | Setor | PF = 100 % |
 | Multissetor | 0 % (0 de 3) |
@@ -587,6 +588,7 @@ PW:
 - **Medidas e limiares da matriz.** Impacto (a) = paragens de artigos A fora das 3 localizações mais usadas; impacto (b) = pedidos divididos com ≤ 24 un.; limiares revistos em 19/11/2026. Ainda a confirmar.
 - **Hora da onda** = hora de criação mais antiga dos seus pedidos (usada na P6).
 - Os indicadores de volume comparam-se por dia com atividade; os rácios comparam-se diretamente.
+- **Percentis pelo método contínuo** (decidido no ticket 01, 19/11/2026). A mediana e o p90 usam `percentile_cont`, para coincidirem com MEDIANA e PERCENTIL.INC do Excel, onde as fixtures são validadas. No dataset completo, os métodos contínuo e discreto dão o mesmo resultado: mediana 2 e p90 13. As escolhas técnicas estão registadas em `docs/adr/0001-orm-e-graficos.md`.
 
 ### Notas de processo
 
