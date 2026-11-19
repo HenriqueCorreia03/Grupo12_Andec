@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export const PAGINAS = [
+const PAGINAS = [
   { href: "/", titulo: "Visão geral" },
   { href: "/artigos", titulo: "Artigos, ABC e localizações" },
   { href: "/ondas", titulo: "Ondas e pedidos" },

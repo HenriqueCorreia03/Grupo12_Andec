@@ -3,10 +3,10 @@
  * → 'aaaa-mm-dd hh:mm:00', para uma coluna timestamp sem fuso.
  */
 export function parseCreationDate(value: string): string {
-  const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/.exec(value);
-  if (!m) throw new Error(`data inválida "${value}" (esperado dd/mm/aaaa hh:mm)`);
-  const [, dd, mm, yyyy, hh, mi] = m;
-  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:00`;
+  const match = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/.exec(value);
+  if (!match) throw new Error(`data inválida "${value}" (esperado dd/mm/aaaa hh:mm)`);
+  const [, day, month, year, hour, minute] = match;
+  return `${year}-${month}-${day} ${hour}:${minute}:00`;
 }
 
 export interface NormalizedSize {
@@ -23,12 +23,12 @@ export interface NormalizedSize {
  */
 export function normalizeSize(value: string): NormalizedSize {
   if (value === '') return { size: null, scaleUnconfirmed: false };
-  const n = Number(value);
-  if (!Number.isFinite(n)) throw new Error(`tamanho inválido "${value}"`);
-  if (Number.isInteger(n) && n >= 35 && n <= 125 && n % 10 === 5) {
-    return { size: n / 10, scaleUnconfirmed: false };
+  const size = Number(value);
+  if (!Number.isFinite(size)) throw new Error(`tamanho inválido "${value}"`);
+  if (Number.isInteger(size) && size >= 35 && size <= 125 && size % 10 === 5) {
+    return { size: size / 10, scaleUnconfirmed: false };
   }
-  return { size: n, scaleUnconfirmed: n >= 215 && n <= 305 };
+  return { size, scaleUnconfirmed: size >= 215 && size <= 305 };
 }
 
 export function parseInteger(value: string, field: string): number {

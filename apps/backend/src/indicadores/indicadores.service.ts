@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
+import { customerOrder } from '../db/schema';
 
 export interface TamanhoMedioEncomenda {
   /** Σ unidades ÷ nº de pedidos válidos; nulo quando não há pedidos ("sem dados"). */
@@ -39,9 +40,9 @@ export class IndicadoresService {
       pedidos_excluidos: number;
     }>(sql`
       with pedidos as (
-        select order_number, sum(quantity) as unidades
-        from customer_order
-        group by order_number
+        select sum(${customerOrder.quantity}) as unidades
+        from ${customerOrder}
+        group by ${customerOrder.orderNumber}
       ),
       validos as (
         select unidades from pedidos where unidades > 0
@@ -53,13 +54,13 @@ export class IndicadoresService {
         (select count(*)::int from validos) as pedidos_considerados,
         (select count(*)::int from pedidos where unidades = 0) as pedidos_excluidos
     `);
-    const r = rows[0];
+    const [resultado] = rows;
     return {
-      valor: r.valor,
-      mediana: r.mediana,
-      p90: r.p90,
-      pedidosConsiderados: r.pedidos_considerados,
-      pedidosExcluidos: r.pedidos_excluidos,
+      valor: resultado.valor,
+      mediana: resultado.mediana,
+      p90: resultado.p90,
+      pedidosConsiderados: resultado.pedidos_considerados,
+      pedidosExcluidos: resultado.pedidos_excluidos,
       definicao: DEFINICAO_TAMANHO_MEDIO,
       fonte: 'Customer_Order',
     };

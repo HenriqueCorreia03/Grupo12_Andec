@@ -1,7 +1,6 @@
 import { resolve } from 'node:path';
-import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { Pool } from 'pg';
+import { connect } from '../db/connection';
 import { CustomerOrderSummary, loadCustomerOrder } from './customer-order';
 
 export interface EtlOptions {
@@ -22,14 +21,13 @@ const MIGRATIONS = resolve(__dirname, '../../drizzle');
  * dentro de uma única transação (se algo falhar, a base fica como estava).
  */
 export async function runEtl({ databaseUrl, dataDir }: EtlOptions): Promise<EtlSummary> {
-  const pool = new Pool({ connectionString: databaseUrl });
+  const { db, close } = connect(databaseUrl);
   try {
-    const db = drizzle({ client: pool });
     await migrate(db, { migrationsFolder: MIGRATIONS });
     return await db.transaction(async (tx) => ({
       customerOrder: await loadCustomerOrder(tx, dataDir),
     }));
   } finally {
-    await pool.end();
+    await close();
   }
 }

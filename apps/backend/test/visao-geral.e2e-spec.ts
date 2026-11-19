@@ -5,10 +5,10 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
-import { runEtl } from '../src/etl/run-etl';
 import { fixture1 } from './fixtures/fixture-1';
 import { expectClose } from './support/expect-close';
 import { removeFixture, writeFixture } from './support/fixture-files';
+import { runEtlCommand } from './support/run-etl-command';
 import { testDatabaseUrl } from './support/test-database';
 
 describe('Visão geral, fixture 1 (onda 33444)', () => {
@@ -19,7 +19,7 @@ describe('Visão geral, fixture 1 (onda 33444)', () => {
   beforeAll(async () => {
     databaseUrl = testDatabaseUrl();
     dataDir = await writeFixture(fixture1);
-    await runEtl({ databaseUrl, dataDir });
+    await runEtlCommand({ DATABASE_URL: databaseUrl, DATA_DIR: dataDir });
 
     process.env.DATABASE_URL = databaseUrl;
     const moduleRef = await Test.createTestingModule({
@@ -52,7 +52,7 @@ describe('Visão geral, fixture 1 (onda 33444)', () => {
     const antes = await request(app.getHttpServer()).get('/api/visao-geral').expect(200);
     const datasAntes = await modificationTimes(dataDir);
 
-    await runEtl({ databaseUrl, dataDir });
+    await runEtlCommand({ DATABASE_URL: databaseUrl, DATA_DIR: dataDir });
 
     const depois = await request(app.getHttpServer()).get('/api/visao-geral').expect(200);
     expect(depois.body).toEqual(antes.body);

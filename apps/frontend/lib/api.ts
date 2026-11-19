@@ -6,7 +6,7 @@ export interface TamanhoMedioEncomenda {
   pedidosConsiderados: number;
   pedidosExcluidos: number;
   definicao: string;
-  fonte: string;
+  fonte: "Customer_Order";
 }
 
 export interface VisaoGeral {

@@ -1,39 +1,24 @@
 import { Global, Inject, Module, OnApplicationShutdown } from '@nestjs/common';
-import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
-import { loadEnv } from '../config/env';
+import { requireEnv } from '../config/env';
+import { connect, type Connection, type Database } from './connection';
 
 export const DATABASE = Symbol('DATABASE');
-export type Database = NodePgDatabase;
+export type { Database };
 
-const POOL = Symbol('POOL');
+const CONNECTION = Symbol('CONNECTION');
 
 @Global()
 @Module({
   providers: [
-    {
-      provide: POOL,
-      useFactory: () => {
-        loadEnv();
-        const connectionString = process.env.DATABASE_URL;
-        if (!connectionString) {
-          throw new Error('Falta DATABASE_URL no .env da raiz (ver .env.example).');
-        }
-        return new Pool({ connectionString });
-      },
-    },
-    {
-      provide: DATABASE,
-      inject: [POOL],
-      useFactory: (pool: Pool): Database => drizzle({ client: pool }),
-    },
+    { provide: CONNECTION, useFactory: () => connect(requireEnv('DATABASE_URL')) },
+    { provide: DATABASE, inject: [CONNECTION], useFactory: (c: Connection) => c.db },
   ],
   exports: [DATABASE],
 })
 export class DatabaseModule implements OnApplicationShutdown {
-  constructor(@Inject(POOL) private readonly pool: Pool) {}
+  constructor(@Inject(CONNECTION) private readonly connection: Connection) {}
 
   async onApplicationShutdown(): Promise<void> {
-    await this.pool.end();
+    await this.connection.close();
   }
 }

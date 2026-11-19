@@ -23,6 +23,7 @@ A especificação (`docs/spec.md`) deixou para o primeiro ticket técnico a esco
 ## Justificação
 
 **Drizzle**
+- Não se usam os pacotes `@nestjs/drizzle` nem `@nestjs/config`: o ETL corre fora do Nest (`npm run etl`), por isso a ligação e a leitura do `.env` ficam em funções simples (`src/db/connection.ts`, `src/config/env.ts`) partilhadas pela API e pelo ETL.
 - Está próximo do SQL e mantém os tipos. As agregações (`percentile_cont`, CTEs, funções de janela) escrevem-se com `sql\`...\`` sem sair do ORM.
 - Não tem motor binário nem passo de geração de código, ao contrário do Prisma. Isso dá menos atrito no Windows e no Jest.
 - Inserções em lote e transações são diretas, que é o que o ETL idempotente precisa.
@@ -40,5 +41,5 @@ A especificação (`docs/spec.md`) deixou para o primeiro ticket técnico a esco
 ## Consequências
 
 - O SQL das agregações fica explícito no módulo de indicadores. Os testes cobrem-no pela fronteira da API, sem testar o SQL diretamente.
-- Mediana e p90 usam `percentile_cont`, como diz a especificação. É o mesmo método das funções MEDIANA e PERCENTIL.INC do Excel, onde as fixtures são validadas.
+- Mediana e p90 usam `percentile_cont` (método contínuo), decisão tomada pela equipa no ticket 01 e registada na especificação. É o mesmo método das funções MEDIANA e PERCENTIL.INC do Excel, onde as fixtures são validadas.
 - Se for preciso trocar de biblioteca de gráficos, a troca fica limitada aos componentes de gráfico do frontend, porque os valores vêm sempre já calculados pela API.
