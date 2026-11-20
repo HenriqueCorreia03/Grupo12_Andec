@@ -41,4 +41,30 @@ describe('Visão geral, fixture 2 (sintética, 2.º setor)', () => {
     expect(body.pedidosPorOnda.ondasComUmPedido).toBe(1);
     expectClose(body.tamanhoMedioEncomenda.valor, 100 / 3);
   });
+
+  it('ABC: A = 3 refs / 85 %, B = 1 / 10 %, C = 2 / 5 % (limiar atravessado, empate pelo código, 95 % exato)', async () => {
+    const { classes } = (await ctx.get('/api/visao-geral')).body.abc;
+    expect(classes.map((c: { classe: string; referencias: number }) => [c.classe, c.referencias])).toEqual([
+      ['A', 3],
+      ['B', 1],
+      ['C', 2],
+    ]);
+    expectClose(classes[0].percentagemUnidades, 85);
+    expectClose(classes[1].percentagemUnidades, 10);
+    expectClose(classes[2].percentagemUnidades, 5);
+  });
+
+  it('ABC por referência: SYN03 ganha o empate a SYN04 pelo código (A); SYN05 com antes = 95 % exato fica em C', async () => {
+    const { referencias } = (await ctx.get('/api/artigos/abc')).body;
+    expect(referencias.map((r: { referencia: string; classe: string }) => [r.referencia, r.classe])).toEqual([
+      ['SYN01', 'A'],
+      ['SYN02', 'A'],
+      ['SYN03', 'A'],
+      ['SYN04', 'B'],
+      ['SYN05', 'C'],
+      ['SYN06', 'C'],
+    ]);
+    expectClose(referencias[2].acumuladoAntes, 75);
+    expectClose(referencias[4].acumuladoAntes, 95);
+  });
 });

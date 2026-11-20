@@ -2,22 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder, product } from '../db/schema';
+import { AbcService, type ResumoAbc } from './abc.service';
+import type { Exclusao, Metadados } from './metadados';
 
-/** Linhas, pedidos ou ondas que ficaram fora de um indicador, com o motivo. */
-export interface Exclusao {
-  motivo: string;
-  quantidade: number;
-}
-
-/** O que todos os indicadores devolvem para o tooltip (spec, "Contrato da API"). */
-interface Metadados {
-  definicao: string;
-  fonte: 'Customer_Order' | 'Customer_Order + Product';
-  /** Linhas do CO que entram no cálculo. */
-  linhasConsideradas: number;
-  exclusoes: Exclusao[];
-  nota?: string;
-}
+export type { Exclusao, Metadados };
 
 export interface TamanhoMedioEncomenda extends Metadados {
   /** Σ unidades ÷ nº de pedidos válidos; nulo quando não há pedidos ("sem dados"). */
@@ -56,6 +44,7 @@ export interface VisaoGeral {
   pedidosPorOnda: PedidosPorOnda;
   participacaoPorSetor: ParticipacaoPorSetor;
   pedidosMultissetor: PedidosMultissetor;
+  abc: ResumoAbc;
 }
 
 /** Linhas, pedidos e ondas que os indicadores de encomenda consideram ou deixam de fora. */
@@ -92,7 +81,10 @@ function limitacaoSetor(contagens: Contagens): string | null {
 
 @Injectable()
 export class IndicadoresService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly abc: AbcService,
+  ) {}
 
   async visaoGeral(): Promise<VisaoGeral> {
     const contagens = await this.contagens();
@@ -101,6 +93,7 @@ export class IndicadoresService {
       pedidosPorOnda: await this.pedidosPorOnda(contagens),
       participacaoPorSetor: await this.participacaoPorSetor(contagens),
       pedidosMultissetor: await this.pedidosMultissetor(contagens),
+      abc: await this.abc.resumo(),
     };
   }
 

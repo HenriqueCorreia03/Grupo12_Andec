@@ -1,4 +1,4 @@
-import type { FixtureFiles } from '../support/fixture-files';
+import { crlf, type FixtureFiles, lf } from '../support/fixture-files';
 
 /**
  * Fixture 4 (spec, "Testing Decisions"): casos difíceis (dados inventados).
@@ -12,7 +12,6 @@ import type { FixtureFiles } from '../support/fixture-files';
  * L4 P2 D3 vazio 1 W10 | L5 P2 D1 105 2 W10 | L6 P3 D2 9 0 W10 (pedido só com zeros)
  * L7 P4 D2 8 3 W11 | L8 P5 D4 7 1 W10 | L9 P5 D4 7 1 W12 (pedido dividido)
  */
-const crlf = (lines: string[]) => '﻿' + lines.join('\r\n') + '\r\n';
 const CLIENTE = 'C0000099            ';
 const CO = (pedido: string, ordem: number, ref: string, tam: string, qtd: number, data: string, onda: string, op: string) =>
   `${CLIENTE};${pedido};${ordem};${ref};${tam};${qtd};${data};${onda};${op}`;
@@ -49,5 +48,5 @@ export const fixture4: FixtureFiles = {
     'D3;C;PF      ',
     'D4;C;PF      ',
   ]),
-  'Storage_Location.csv': ['originalLocation,position,x,y,z', 'K-01-01,"100, 200, 1",100,200,1'].join('\n') + '\n',
+  'Storage_Location.csv': lf(['originalLocation,position,x,y,z', 'K-01-01,"100, 200, 1",100,200,1']),
 };

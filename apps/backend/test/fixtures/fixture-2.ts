@@ -1,4 +1,4 @@
-import type { FixtureFiles } from '../support/fixture-files';
+import { crlf, type FixtureFiles, lf } from '../support/fixture-files';
 
 /**
  * Fixture 2 (spec, "Testing Decisions"): ABC sintético com 2.º setor (dados inventados).
@@ -7,7 +7,6 @@ import type { FixtureFiles } from '../support/fixture-files';
  * Pedidos: P-A (onda W-A) = SYN01 50; P-B (W-B) = SYN02 25 + SYN04 10;
  * P-C (W-B) = SYN03 10 + SYN05 4 + SYN06 1. Mesma data, mesmo tamanho. PW só com o cabeçalho.
  */
-const crlf = (lines: string[]) => '﻿' + lines.join('\r\n') + '\r\n';
 const CO = (pedido: string, ordem: number, ref: string, qtd: number, onda: string) =>
   `C0000001;${pedido};${ordem};${ref};9;${qtd};10/01/2023 10:00;${onda};Operator_1`;
 
@@ -31,5 +30,5 @@ export const fixture2: FixtureFiles = {
     'SYN05;C;SX',
     'SYN06;C;SX',
   ]),
-  'Storage_Location.csv': 'originalLocation,position,x,y,z\n',
+  'Storage_Location.csv': lf(['originalLocation,position,x,y,z']),
 };

@@ -1,4 +1,4 @@
-import type { FixtureFiles } from '../support/fixture-files';
+import { crlf, type FixtureFiles, lf } from '../support/fixture-files';
 
 /**
  * Fixture 1 (spec, "Testing Decisions"): onda 33444, dados reais.
@@ -10,9 +10,6 @@ import type { FixtureFiles } from '../support/fixture-files';
  * Valores esperados (calculados à mão, folha de Excel da fixture 1):
  * pedidos 90412 = 2 un., 90413 = 3 un., 90414 = 2 un.
  */
-const BOM = '﻿';
-const crlf = (lines: string[]) => BOM + lines.join('\r\n') + '\r\n';
-const lf = (lines: string[]) => lines.join('\n') + '\n';
 
 export const fixture1: FixtureFiles = {
   'Customer_Order.csv': crlf([

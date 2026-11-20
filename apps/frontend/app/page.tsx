@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
+import { ErroApi } from "@/components/erro-api";
 import { obterVisaoGeral, type VisaoGeral } from "@/lib/api";
 import {
   formatarNumero,
@@ -32,10 +34,11 @@ async function IndicadoresMinimos() {
   } catch (e) {
     return <ErroApi mensagem={(e as Error).message} />;
   }
-  const { tamanhoMedioEncomenda: tamanho, pedidosPorOnda, participacaoPorSetor, pedidosMultissetor } = dados;
+  const { tamanhoMedioEncomenda: tamanho, pedidosPorOnda, participacaoPorSetor, pedidosMultissetor, abc } = dados;
   const tamanhoMedio = formatarNumeroOuNulo(tamanho.valor);
   const porOnda = formatarNumeroOuNulo(pedidosPorOnda.valor);
   const multissetor = formatarPercentagemOuNulo(pedidosMultissetor.valor);
+  const resumoAbc = abc.classes.map((c) => `${c.classe} ${formatarNumero(c.referencias)}`).join(" / ");
   const setores = participacaoPorSetor.setores
     .map((s) => `${s.setor} ${formatarPercentagem(s.percentagem)}`)
     .join("; ");
@@ -99,6 +102,31 @@ async function IndicadoresMinimos() {
           ]}
         />
       </CartaoIndicador>
+
+      <CartaoIndicador titulo="Classificação ABC (classe global)" metadados={abc} valorResumo={`${resumoAbc} referências`}>
+        <table className="mt-2 w-full text-sm">
+          <thead>
+            <tr className="text-left text-stone-500">
+              <th className="font-normal">Classe</th>
+              <th className="text-right font-normal">Referências</th>
+              <th className="text-right font-normal">% unidades</th>
+            </tr>
+          </thead>
+          <tbody>
+            {abc.classes.map((c) => (
+              <tr key={c.classe}>
+                <td className="py-0.5">
+                  <Link href={`/artigos?classe=${c.classe}`} className="font-semibold underline-offset-2 hover:underline">
+                    {c.classe}
+                  </Link>
+                </td>
+                <td className="text-right font-medium">{formatarNumero(c.referencias)}</td>
+                <td className="text-right font-medium">{formatarPercentagem(c.percentagemUnidades)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CartaoIndicador>
     </>
   );
 }
@@ -106,18 +134,9 @@ async function IndicadoresMinimos() {
 function CartoesACarregar() {
   return (
     <>
-      {[0, 1, 2, 3].map((i) => (
+      {[0, 1, 2, 3, 4].map((i) => (
         <div key={i} className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />
       ))}
     </>
-  );
-}
-
-function ErroApi({ mensagem }: { mensagem: string }) {
-  return (
-    <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-5 text-sm text-red-800 sm:col-span-2 lg:col-span-3">
-      <p className="font-medium">Não foi possível obter os dados da API.</p>
-      <p className="mt-1">{mensagem}</p>
-    </div>
   );
 }

@@ -52,6 +52,16 @@ describe('Visão geral, fixture 1 (onda 33444)', () => {
     expect(body.participacaoPorSetor.limitacao).toEqual(expect.stringContaining('único setor'));
   });
 
+  it('classifica AHR20O (5 un., antes 0 %) e Q50W5L (2 un., antes 71,43 %) em A', async () => {
+    const abc = (await ctx.get('/api/visao-geral')).body.abc;
+    expect(abc.classes).toEqual([
+      { classe: 'A', referencias: 2, unidades: 7, percentagemUnidades: 100 },
+      { classe: 'B', referencias: 0, unidades: 0, percentagemUnidades: 0 },
+      { classe: 'C', referencias: 0, unidades: 0, percentagemUnidades: 0 },
+    ]);
+    expect(abc.fonte).toBe('Customer_Order');
+  });
+
   it('o ETL é idempotente: corrido outra vez dá o mesmo JSON e não altera os CSV', async () => {
     const antes = await ctx.get('/api/visao-geral');
     const datasAntes = await modificationTimes(ctx.dataDir);
