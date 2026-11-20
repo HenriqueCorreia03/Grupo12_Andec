@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { connect } from '../db/connection';
 import { CustomerOrderSummary, loadCustomerOrder } from './customer-order';
+import { loadProduct, ProductSummary } from './product';
 
 export interface EtlOptions {
   databaseUrl: string;
@@ -10,6 +11,7 @@ export interface EtlOptions {
 
 export interface EtlSummary {
   customerOrder: CustomerOrderSummary;
+  product: ProductSummary;
 }
 
 /** Pasta das migrações SQL geradas pelo drizzle-kit (igual a partir de src/ e de dist/). */
@@ -26,6 +28,7 @@ export async function runEtl({ databaseUrl, dataDir }: EtlOptions): Promise<EtlS
     await migrate(db, { migrationsFolder: MIGRATIONS });
     return await db.transaction(async (tx) => ({
       customerOrder: await loadCustomerOrder(tx, dataDir),
+      product: await loadProduct(tx, dataDir),
     }));
   } finally {
     await close();

@@ -1,16 +1,50 @@
 /** Contrato de GET /api/visao-geral (backend NestJS). */
-export interface TamanhoMedioEncomenda {
+export interface Exclusao {
+  motivo: string;
+  quantidade: number;
+}
+
+/** O que todos os indicadores trazem para o tooltip. */
+export interface MetadadosIndicador {
+  definicao: string;
+  fonte: "Customer_Order" | "Customer_Order + Product";
+  linhasConsideradas: number;
+  exclusoes: Exclusao[];
+  nota?: string;
+}
+
+export interface TamanhoMedioEncomenda extends MetadadosIndicador {
   valor: number | null;
   mediana: number | null;
   p90: number | null;
   pedidosConsiderados: number;
   pedidosExcluidos: number;
-  definicao: string;
-  fonte: "Customer_Order";
+}
+
+export interface PedidosPorOnda extends MetadadosIndicador {
+  valor: number | null;
+  mediana: number | null;
+  ondas: number;
+  ondasComUmPedido: number;
+}
+
+export interface ParticipacaoPorSetor extends MetadadosIndicador {
+  setores: { setor: string; unidades: number; percentagem: number }[];
+  limitacao: string | null;
+}
+
+export interface PedidosMultissetor extends MetadadosIndicador {
+  valor: number | null;
+  pedidosMultissetor: number;
+  pedidosValidos: number;
+  limitacao: string | null;
 }
 
 export interface VisaoGeral {
   tamanhoMedioEncomenda: TamanhoMedioEncomenda;
+  pedidosPorOnda: PedidosPorOnda;
+  participacaoPorSetor: ParticipacaoPorSetor;
+  pedidosMultissetor: PedidosMultissetor;
 }
 
 function apiUrl(path: string): string {

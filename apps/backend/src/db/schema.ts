@@ -49,3 +49,19 @@ export const customerOrder = pgTable('customer_order', {
   /** Linha com 0 un.: não conta em nenhum indicador de pedido. */
   isZero: boolean('is_zero').notNull(),
 });
+
+/** Product tal como está no CSV (texto, com o nº da linha de origem). */
+export const rawProduct = pgTable('raw_product', {
+  sourceLine: integer('source_line').primaryKey(),
+  reference: text('reference'),
+  abccod: text('abccod'),
+  sector: text('sector'),
+});
+
+/** Product normalizado: uma linha por referência, setor sem espaços. */
+export const product = pgTable('product', {
+  reference: text('reference').primaryKey(),
+  sourceLine: integer('source_line').notNull(),
+  abccod: text('abccod').notNull(),
+  sector: text('sector').notNull(),
+});

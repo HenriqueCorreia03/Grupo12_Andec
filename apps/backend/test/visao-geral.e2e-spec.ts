@@ -1,45 +1,23 @@
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
-import { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from '../src/app.module';
 import { fixture1 } from './fixtures/fixture-1';
+import { AppWithFixture, startAppWithFixture } from './support/app-with-fixture';
 import { expectClose } from './support/expect-close';
-import { removeFixture, writeFixture } from './support/fixture-files';
 import { runEtlCommand } from './support/run-etl-command';
-import { testDatabaseUrl } from './support/test-database';
 
 describe('Visão geral, fixture 1 (onda 33444)', () => {
-  let app: INestApplication<App>;
-  let dataDir: string;
-  let databaseUrl: string;
+  let ctx: AppWithFixture;
 
   beforeAll(async () => {
-    databaseUrl = testDatabaseUrl();
-    dataDir = await writeFixture(fixture1);
-    await runEtlCommand({ DATABASE_URL: databaseUrl, DATA_DIR: dataDir });
-
-    process.env.DATABASE_URL = databaseUrl;
-    const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-    app = moduleRef.createNestApplication();
-    await app.init();
+    ctx = await startAppWithFixture(fixture1);
   });
 
   afterAll(async () => {
-    await app?.close();
-    await removeFixture(dataDir);
+    await ctx?.close();
   });
 
   it('devolve o tamanho médio da encomenda (7 ÷ 3), a mediana 2 e o p90 2,8, sem arredondamento', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/api/visao-geral')
-      .expect(200);
-
-    const tamanho = res.body.tamanhoMedioEncomenda;
+    const tamanho = (await ctx.get('/api/visao-geral')).body.tamanhoMedioEncomenda;
     expectClose(tamanho.valor, 7 / 3);
     expectClose(tamanho.mediana, 2);
     expectClose(tamanho.p90, 2.8);
@@ -48,15 +26,41 @@ describe('Visão geral, fixture 1 (onda 33444)', () => {
     expect(tamanho.definicao).toEqual(expect.stringContaining('pedidos válidos'));
   });
 
+  it('devolve 3 pedidos por onda (1 onda, mediana 3, nenhuma onda com 1 pedido)', async () => {
+    const porOnda = (await ctx.get('/api/visao-geral')).body.pedidosPorOnda;
+    expectClose(porOnda.valor, 3);
+    expectClose(porOnda.mediana, 3);
+    expect(porOnda.ondas).toBe(1);
+    expect(porOnda.ondasComUmPedido).toBe(0);
+    expect(porOnda.fonte).toBe('Customer_Order');
+    expect(porOnda.nota).toMatch(/universo de ondas = CO/i);
+  });
+
+  it('devolve a participação por setor PF = 100 % e 0 % de pedidos multissetor (0 de 3)', async () => {
+    const body = (await ctx.get('/api/visao-geral')).body;
+    expect(body.participacaoPorSetor.setores).toHaveLength(1);
+    expect(body.participacaoPorSetor.setores[0].setor).toBe('PF');
+    expectClose(body.participacaoPorSetor.setores[0].percentagem, 100);
+    expect(body.participacaoPorSetor.fonte).toBe('Customer_Order + Product');
+
+    const multi = body.pedidosMultissetor;
+    expectClose(multi.valor, 0);
+    expect(multi.pedidosMultissetor).toBe(0);
+    expect(multi.pedidosValidos).toBe(3);
+    expect(multi.fonte).toBe('Customer_Order + Product');
+    expect(multi.limitacao).toEqual(expect.stringContaining('único setor'));
+    expect(body.participacaoPorSetor.limitacao).toEqual(expect.stringContaining('único setor'));
+  });
+
   it('o ETL é idempotente: corrido outra vez dá o mesmo JSON e não altera os CSV', async () => {
-    const antes = await request(app.getHttpServer()).get('/api/visao-geral').expect(200);
-    const datasAntes = await modificationTimes(dataDir);
+    const antes = await ctx.get('/api/visao-geral');
+    const datasAntes = await modificationTimes(ctx.dataDir);
 
-    await runEtlCommand({ DATABASE_URL: databaseUrl, DATA_DIR: dataDir });
+    await runEtlCommand({ DATABASE_URL: ctx.databaseUrl, DATA_DIR: ctx.dataDir });
 
-    const depois = await request(app.getHttpServer()).get('/api/visao-geral').expect(200);
+    const depois = await ctx.get('/api/visao-geral');
     expect(depois.body).toEqual(antes.body);
-    expect(await modificationTimes(dataDir)).toEqual(datasAntes);
+    expect(await modificationTimes(ctx.dataDir)).toEqual(datasAntes);
   });
 });
 

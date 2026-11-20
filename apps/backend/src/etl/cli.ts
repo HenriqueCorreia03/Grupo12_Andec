@@ -11,7 +11,8 @@ async function main(): Promise<void> {
   const { lines, duplicateLines, zeroLines } = summary.customerOrder;
   console.log(
     `ETL concluído em ${((Date.now() - started) / 1000).toFixed(1)} s. ` +
-      `Customer_Order: ${lines} linhas (${duplicateLines} duplicadas, ${zeroLines} a zero).`,
+      `Customer_Order: ${lines} linhas (${duplicateLines} duplicadas, ${zeroLines} a zero). ` +
+      `Product: ${summary.product.references} referências.`,
   );
 }
 
