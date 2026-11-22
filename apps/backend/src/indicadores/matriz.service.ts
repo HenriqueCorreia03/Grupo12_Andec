@@ -3,7 +3,8 @@ import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder, esforcoMatriz, pickingWave, storageLocation } from '../db/schema';
 import { abcGlobal } from './abc';
-import { type Filtros, SEM_FILTROS } from './filtros';
+// A matriz compara as alavancas no dataset completo: qualquer filtro ativo é "não aplicável".
+import { type Filtros, filtrosAtivos, SEM_FILTROS } from './filtros';
 
 export type Nota = 1 | 2 | 3;
 
@@ -72,20 +73,6 @@ export interface Matriz {
   nota: string;
   /** Filtros pedidos que a matriz ignora: é sempre calculada sobre o dataset completo. */
   filtrosNaoAplicaveis: string[];
-}
-
-/** A matriz compara as alavancas no dataset completo: qualquer filtro ativo é "não aplicável". */
-function filtrosAtivos(filtros: Filtros): string[] {
-  const ativos: [string, boolean][] = [
-    ['período', filtros.inicio !== null || filtros.fim !== null],
-    ['referência', filtros.referencia !== null],
-    ['classe ABC', filtros.classe !== null],
-    ['operador', filtros.operador !== null],
-    ['zona', filtros.zona !== null],
-    ['onda', filtros.onda !== null],
-    ['pedido', filtros.pedido !== null],
-  ];
-  return ativos.filter(([, ativo]) => ativo).map(([nome]) => nome);
 }
 
 const ROTULO_ESFORCO: Record<Nota, Esforco['rotulo']> = { 1: 'alto', 2: 'médio', 3: 'baixo' };
