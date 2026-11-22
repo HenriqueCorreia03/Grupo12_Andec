@@ -38,6 +38,16 @@ describe('Filtros, validação dos parâmetros e "sem dados" (fixture 4)', () =>
       await rejeitado(`${endpoint}?classe=D`, /classe/i);
     });
 
+    it('rejeita operador, onda e pedido repetidos (400)', async () => {
+      await rejeitado(`${endpoint}?operador=Operator_1&operador=Operator_2`, /operador/i);
+      await rejeitado(`${endpoint}?onda=W10&onda=W12`, /onda/i);
+      await rejeitado(`${endpoint}?pedido=P1&pedido=P2`, /pedido/i);
+    });
+
+    it('aceita operador, onda e pedido (200)', async () => {
+      await resposta(`${endpoint}?operador=Operator_1&onda=W10&pedido=P1`).expect(200);
+    });
+
     it('aceita os filtros válidos e ignora os parâmetros desconhecidos (200)', async () => {
       await resposta(`${endpoint}?mes=2023-02&referencia=D1&classe=A&zona=K&operador=Operator_1`).expect(200);
     });

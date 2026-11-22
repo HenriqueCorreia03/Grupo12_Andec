@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { pickingWave, storageLocation } from '../db/schema';
-import { type Filtros, pickingFiltrado, SEM_FILTROS } from './filtros';
+import { type Filtros, pickingFiltrado, SEM_FILTROS, naoAplicaveis } from './filtros';
 import type { Metadados } from './metadados';
 
 /** Localização que a spec mostra sempre em separado dentro das não mapeadas. */
@@ -71,6 +71,7 @@ export class ZonasService {
           'Localização mapeada = existe no Storage_Location; zona = prefixo antes do 1.º hífen. ' +
           'As não mapeadas ficam fora das percentagens por zona e aparecem à parte, com a % sobre o total recolhido (RC-01 em separado).',
         fonte: 'Picking_Wave + Storage_Location',
+        filtrosNaoAplicaveis: naoAplicaveis(filtros, 'PW'),
         linhasConsideradas: totalRecolhido,
         exclusoes: [],
       },

@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder, product } from '../db/schema';
 import { AbcService, type ResumoAbc } from './abc.service';
-import { type Filtros, linhasFiltradas, pedidosQuePassam, SEM_FILTROS } from './filtros';
+import { type Filtros, linhasFiltradas, pedidosQuePassam, SEM_FILTROS, naoAplicaveis } from './filtros';
 import type { Exclusao, Metadados } from './metadados';
 
 export type { Exclusao, Metadados };
@@ -170,6 +170,7 @@ export class IndicadoresService {
         'Unidades encomendadas ÷ nº de pedidos válidos (pedidos com total > 0 un.). ' +
         'Mediana e p90 sobre o total de unidades de cada pedido válido (método contínuo).',
       fonte: 'Customer_Order',
+      filtrosNaoAplicaveis: naoAplicaveis(filtros, 'CO'),
       linhasConsideradas: contagens.linhasPositivas,
       exclusoes: exclusoes(contagens, 'pedidosZero', 'linhasZero'),
     };
@@ -207,6 +208,7 @@ export class IndicadoresService {
         'Um pedido dividido conta em cada onda onde aparece.',
       nota: 'Universo de ondas = CO (inclui as ondas sem picking); a ocupação usa o PW.',
       fonte: 'Customer_Order',
+      filtrosNaoAplicaveis: naoAplicaveis(filtros, 'CO'),
       linhasConsideradas: contagens.linhasPositivas,
       exclusoes: exclusoes(contagens, 'linhasZero', 'pedidosZero', 'ondasSoComZeros'),
     };
@@ -232,6 +234,7 @@ export class IndicadoresService {
         'Unidades encomendadas do setor ÷ unidades encomendadas totais × 100. Setor do Product, sem espaços.',
       limitacao: limitacaoSetor(contagens),
       fonte: 'Customer_Order + Product',
+      filtrosNaoAplicaveis: naoAplicaveis(filtros, 'CO'),
       linhasConsideradas: contagens.linhasPositivasComProduto,
       exclusoes: exclusoes(contagens, 'linhasZero', 'linhasSemProduto'),
     };
@@ -261,6 +264,7 @@ export class IndicadoresService {
       definicao: 'Pedidos válidos com linhas > 0 de ≥ 2 setores ÷ pedidos válidos × 100.',
       limitacao: limitacaoSetor(contagens),
       fonte: 'Customer_Order + Product',
+      filtrosNaoAplicaveis: naoAplicaveis(filtros, 'CO'),
       linhasConsideradas: contagens.linhasPositivas,
       exclusoes: exclusoes(contagens, 'pedidosZero', 'linhasZero', 'linhasSemProduto'),
     };

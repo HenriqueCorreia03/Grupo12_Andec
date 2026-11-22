@@ -12,6 +12,8 @@ export interface MetadadosIndicador {
   fonte: "Customer_Order" | "Customer_Order + Product" | "Picking_Wave" | "Picking_Wave + Storage_Location";
   linhasConsideradas: number;
   exclusoes: Exclusao[];
+  /** Filtros pedidos que este indicador não consegue aplicar (por exemplo, "operador" num indicador de encomenda). */
+  filtrosNaoAplicaveis: string[];
   nota?: string;
 }
 

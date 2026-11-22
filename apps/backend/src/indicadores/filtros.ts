@@ -5,7 +5,7 @@ import { abcGlobal, CLASSES_ABC, type ClasseAbc } from './abc';
 
 /**
  * Filtros globais comuns a todos os endpoints (ticket 06a; spec, "Filtros").
- * Parâmetros desconhecidos (zona, operador, ...) são ignorados até ao ticket 06b.
+ * Parâmetros desconhecidos são ignorados.
  *
  * Regra única (spec, "Propriedades das entidades e filtros"): as medidas aditivas (unidades, linhas, paragens)
  * usam só as linhas que passam os filtros; as propriedades de uma entidade (pedido dividido, multissetor,
@@ -20,9 +20,31 @@ export interface Filtros {
   referencia: string | null;
   /** Classe ABC **global** (do histórico completo, fixa), nunca recalculada no período. */
   classe: ClasseAbc | null;
+  /** Operador recolhedor (PW). Só se aplica aos indicadores de picking; nos de encomenda é "não aplicável". */
+  operador: string | null;
+  /** Onda: aplica-se ao CO e ao PW (a chave comum). */
+  onda: string | null;
+  /** Pedido: só existe no CO; nos indicadores de picking é "não aplicável" (o PW não tem número de pedido). */
+  pedido: string | null;
 }
 
-export const SEM_FILTROS: Filtros = { inicio: null, fim: null, referencia: null, classe: null };
+export const SEM_FILTROS: Filtros = {
+  inicio: null,
+  fim: null,
+  referencia: null,
+  classe: null,
+  operador: null,
+  onda: null,
+  pedido: null,
+};
+
+/** Os filtros que cada origem de dados não consegue aplicar (a API devolve-os junto de cada indicador). */
+export function naoAplicaveis(filtros: Filtros, origem: 'CO' | 'PW'): string[] {
+  const lista: string[] = [];
+  if (origem === 'CO' && filtros.operador !== null) lista.push('operador');
+  if (origem === 'PW' && filtros.pedido !== null) lista.push('pedido');
+  return lista;
+}
 
 /**
  * Lê e valida os parâmetros de filtro da query string; qualquer erro é um 400 com mensagem clara.
@@ -36,17 +58,20 @@ export function lerFiltros(query: Record<string, unknown>): Filtros {
   const mes = texto(query, 'mes');
   const referencia = texto(query, 'referencia');
   const classe = texto(query, 'classe');
+  const operador = texto(query, 'operador');
+  const onda = texto(query, 'onda');
+  const pedido = texto(query, 'pedido');
 
   if (classe !== null && !(CLASSES_ABC as string[]).includes(classe)) {
     throw new BadRequestException(`Classe ABC inválida "${classe}" (use A, B ou C).`);
   }
-  const filtroClasse = classe as ClasseAbc | null;
+  const outros = { referencia, classe: classe as ClasseAbc | null, operador, onda, pedido };
 
   if (mes !== null) {
     if (inicio !== null || fim !== null) {
       throw new BadRequestException('Use mes ou inicio e fim, não os dois.');
     }
-    return { ...periodoDoMes(mes), referencia, classe: filtroClasse };
+    return { ...periodoDoMes(mes), ...outros };
   }
   if ((inicio === null) !== (fim === null)) {
     throw new BadRequestException('Os parâmetros inicio e fim têm de vir juntos.');
@@ -58,7 +83,7 @@ export function lerFiltros(query: Record<string, unknown>): Filtros {
       throw new BadRequestException(`A data inicio (${inicio}) é posterior à data fim (${fim}).`);
     }
   }
-  return { inicio, fim, referencia, classe: filtroClasse };
+  return { inicio, fim, ...outros };
 }
 
 /** Valor de um parâmetro; nulo se ausente ou vazio. Um parâmetro repetido ou composto é um erro. */
@@ -139,6 +164,8 @@ function condicoesCO(filtros: Filtros, alias: SQL): SQL {
   if (filtros.fim !== null) condicoes.push(sql`${alias}.created_at < (${filtros.fim}::date + 1)`);
   if (filtros.referencia !== null) condicoes.push(sql`${alias}.reference = ${filtros.referencia}`);
   if (filtros.classe !== null) condicoes.push(sql`${alias}.reference in (${referenciasDaClasse(filtros.classe)})`);
+  if (filtros.onda !== null) condicoes.push(sql`${alias}.wave_number = ${filtros.onda}`);
+  if (filtros.pedido !== null) condicoes.push(sql`${alias}.order_number = ${filtros.pedido}`);
   return condicoes.length === 0 ? sql`true` : sql.join(condicoes, sql` and `);
 }
 
@@ -160,5 +187,7 @@ function condicoesPicking(filtros: Filtros, alias: SQL): SQL {
   }
   if (filtros.referencia !== null) condicoes.push(sql`${alias}.reference = ${filtros.referencia}`);
   if (filtros.classe !== null) condicoes.push(sql`${alias}.reference in (${referenciasDaClasse(filtros.classe)})`);
+  if (filtros.operador !== null) condicoes.push(sql`${alias}.operator = ${filtros.operador}`);
+  if (filtros.onda !== null) condicoes.push(sql`${alias}.wave_number = ${filtros.onda}`);
   return condicoes.length === 0 ? sql`true` : sql.join(condicoes, sql` and `);
 }

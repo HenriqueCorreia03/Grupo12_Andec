@@ -32,6 +32,7 @@ describe('Ondas e pedidos, pedidos divididos, fixture 4 (casos difíceis)', () =
         'divididosAte24',
         'divididosMaisDe24',
         'exclusoes',
+        'filtrosNaoAplicaveis',
         'fonte',
         'linhasConsideradas',
         'pedidosDivididos',

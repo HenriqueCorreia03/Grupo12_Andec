@@ -23,6 +23,9 @@ function FormularioFiltros({ filtros }: { filtros: FiltrosUrl }) {
   const [fim, setFim] = useState(filtros.fim ?? "");
   const [referencia, setReferencia] = useState(filtros.referencia ?? "");
   const [classe, setClasse] = useState(filtros.classe ?? "");
+  const [operador, setOperador] = useState(filtros.operador ?? "");
+  const [onda, setOnda] = useState(filtros.onda ?? "");
+  const [pedido, setPedido] = useState(filtros.pedido ?? "");
   const [erro, setErro] = useState<string | null>(null);
   const ativos = descreverFiltros(filtros);
 
@@ -45,6 +48,9 @@ function FormularioFiltros({ filtros }: { filtros: FiltrosUrl }) {
     }
     if (referencia.trim() !== "") novos.referencia = referencia.trim();
     if (classe !== "") novos.classe = classe;
+    if (operador.trim() !== "") novos.operador = operador.trim();
+    if (onda.trim() !== "") novos.onda = onda.trim();
+    if (pedido.trim() !== "") novos.pedido = pedido.trim();
     router.push(`${pathname}${consulta(novos)}`);
   }
 
@@ -106,6 +112,18 @@ function FormularioFiltros({ filtros }: { filtros: FiltrosUrl }) {
               </option>
             ))}
           </select>
+        </label>
+        <label className="text-xs text-stone-500">
+          Operador (picking)
+          <input type="text" value={operador} onChange={(e) => setOperador(e.target.value)} className={`${campo} block w-28`} />
+        </label>
+        <label className="text-xs text-stone-500">
+          Onda
+          <input type="text" value={onda} onChange={(e) => setOnda(e.target.value)} className={`${campo} block w-24`} />
+        </label>
+        <label className="text-xs text-stone-500">
+          Pedido
+          <input type="text" value={pedido} onChange={(e) => setPedido(e.target.value)} className={`${campo} block w-24`} />
         </label>
         <button type="submit" className="rounded bg-stone-900 px-3 py-1.5 text-sm text-white hover:bg-stone-700">
           Aplicar

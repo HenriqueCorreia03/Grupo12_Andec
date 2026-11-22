@@ -28,6 +28,11 @@ export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, chi
       <h2 className="text-sm font-medium text-stone-500">{titulo}</h2>
       {children}
       <p className="mt-3 text-xs text-stone-500">Fonte: {metadados.fonte}</p>
+      {metadados.filtrosNaoAplicaveis.length > 0 && (
+        <p className="mt-2 rounded border border-stone-300 bg-stone-100 px-2 py-1 text-xs text-stone-700">
+          Filtro não aplicável a este indicador: {metadados.filtrosNaoAplicaveis.join(", ")}. O valor não o usa.
+        </p>
+      )}
       {limitacao && (
         <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">{limitacao}</p>
       )}

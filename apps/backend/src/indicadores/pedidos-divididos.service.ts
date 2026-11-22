@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder } from '../db/schema';
-import { type Filtros, pedidosQuePassam, SEM_FILTROS, selecionarLinhasCO } from './filtros';
+import { type Filtros, pedidosQuePassam, SEM_FILTROS, selecionarLinhasCO, naoAplicaveis } from './filtros';
 import type { Metadados } from './metadados';
 
 /** Limiar da onda de 24 un.: acima dele a divisão é inevitável (spec, "Pedidos divididos"). */
@@ -78,6 +78,7 @@ export class PedidosDivididosService {
         `Separa os divididos com mais de ${LIMITE_UNIDADES} un. (inevitáveis) dos de ${LIMITE_UNIDADES} un. ou menos (evitáveis); ` +
         'as unidades são as do pedido completo, somadas em todas as ondas.',
       fonte: 'Customer_Order',
+      filtrosNaoAplicaveis: naoAplicaveis(filtros, 'CO'),
       linhasConsideradas: r.linhas_positivas,
       exclusoes: [
         { motivo: 'pedidos com 0 un.', quantidade: r.pedidos_zero },
