@@ -68,6 +68,20 @@ export interface VisaoGeral {
   abc: ResumoAbc;
 }
 
+/** Contrato de GET /api/ondas-e-pedidos. */
+export interface PedidosDivididos extends MetadadosIndicador {
+  valor: number | null;
+  pedidosDivididos: number;
+  pedidosValidos: number;
+  divididosMaisDe24: number;
+  divididosAte24: number;
+  percentagemAte24: number | null;
+}
+
+export interface OndasEPedidos {
+  pedidosDivididos: PedidosDivididos;
+}
+
 function apiUrl(path: string): string {
   const base = process.env.NEXT_PUBLIC_API_URL;
   if (!base) {
@@ -89,6 +103,11 @@ async function obter<T>(path: string, opcoes?: { nuloSe404: true }): Promise<T |
 /** O frontend só obtém valores através da API do backend. */
 export function obterVisaoGeral(): Promise<VisaoGeral> {
   return obter("/api/visao-geral");
+}
+
+/** Indicadores da página Ondas e pedidos (pedidos divididos). */
+export function obterOndasEPedidos(): Promise<OndasEPedidos> {
+  return obter("/api/ondas-e-pedidos");
 }
 
 /** ABC global; com `classe`, só as referências dessa classe. */
