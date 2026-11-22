@@ -11,5 +11,7 @@ export interface Metadados {
   /** Linhas do CO que entram no cálculo. */
   linhasConsideradas: number;
   exclusoes: Exclusao[];
+  /** Filtros pedidos que este indicador não consegue aplicar (por exemplo, o operador num indicador de encomenda). */
+  filtrosNaoAplicaveis: string[];
   nota?: string;
 }

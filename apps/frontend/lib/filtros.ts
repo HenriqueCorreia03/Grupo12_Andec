@@ -2,7 +2,7 @@
  * Filtros globais (ticket 06a): vivem no URL, por isso persistem ao recarregar e ao mudar de página.
  * O frontend não faz contas de datas: o mês (`mes=aaaa-mm`) vai tal como está e a API converte-o em início e fim.
  */
-export const CHAVES_FILTRO = ["mes", "inicio", "fim", "referencia", "classe"] as const;
+export const CHAVES_FILTRO = ["mes", "inicio", "fim", "referencia", "classe", "operador", "onda", "pedido"] as const;
 export type ChaveFiltro = (typeof CHAVES_FILTRO)[number];
 export type FiltrosUrl = Partial<Record<ChaveFiltro, string>>;
 
@@ -57,5 +57,8 @@ export function descreverFiltros(filtros: FiltrosUrl): string[] {
   else if (filtros.inicio || filtros.fim) descricoes.push(`Período ${filtros.inicio ?? "…"} a ${filtros.fim ?? "…"}`);
   if (filtros.referencia) descricoes.push(`Referência ${filtros.referencia}`);
   if (filtros.classe) descricoes.push(`Classe ${filtros.classe} (global)`);
+  if (filtros.operador) descricoes.push(`Operador ${filtros.operador}`);
+  if (filtros.onda) descricoes.push(`Onda ${filtros.onda}`);
+  if (filtros.pedido) descricoes.push(`Pedido ${filtros.pedido}`);
   return descricoes;
 }

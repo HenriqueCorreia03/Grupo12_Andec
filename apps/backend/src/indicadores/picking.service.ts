@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder, pickingWave } from '../db/schema';
-import { type Filtros, SEM_FILTROS, selecionarLinhasPicking } from './filtros';
+import { type Filtros, SEM_FILTROS, selecionarLinhasPicking, naoAplicaveis } from './filtros';
 import type { Metadados } from './metadados';
 
 /** Capacidade de referência da onda (um alvo, não um limite; spec, "Ocupação da onda"). */
@@ -87,6 +87,7 @@ export class PickingService {
           'Média sobre as ondas do PW; cada linha do PW é 1 un.',
         nota: universo,
         fonte: 'Picking_Wave',
+        filtrosNaoAplicaveis: naoAplicaveis(filtros, 'PW'),
         linhasConsideradas: linhas,
         exclusoes: [],
       },
@@ -94,6 +95,7 @@ export class PickingService {
         valor: ondas.length === 0 ? null : localizacoes.reduce((total, n) => total + n, 0),
         definicao: 'Pares distintos (onda, localização) no PW; a mesma localização em duas ondas conta duas vezes.',
         fonte: 'Picking_Wave',
+        filtrosNaoAplicaveis: naoAplicaveis(filtros, 'PW'),
         linhasConsideradas: linhas,
         exclusoes: [],
       },
@@ -105,6 +107,7 @@ export class PickingService {
         definicao: 'Nº de localizações distintas de cada onda no PW; média, mediana e distribuição.',
         nota: universo,
         fonte: 'Picking_Wave',
+        filtrosNaoAplicaveis: naoAplicaveis(filtros, 'PW'),
         linhasConsideradas: linhas,
         exclusoes: [],
       },

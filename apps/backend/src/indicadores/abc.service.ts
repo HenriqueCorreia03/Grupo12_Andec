@@ -3,7 +3,7 @@ import { sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder } from '../db/schema';
 import { abcGlobal, abcSobre, CLASSES_ABC, type ClasseAbc } from './abc';
-import { type Filtros, linhasFiltradas, SEM_FILTROS, selecionarLinhasCO } from './filtros';
+import { type Filtros, linhasFiltradas, SEM_FILTROS, selecionarLinhasCO, naoAplicaveis } from './filtros';
 import type { Metadados } from './metadados';
 
 export interface ResumoClasseAbc {
@@ -188,6 +188,7 @@ export class AbcService {
     return {
       definicao: DEFINICAO_ABC,
       fonte: 'Customer_Order',
+      filtrosNaoAplicaveis: naoAplicaveis(filtros, 'CO'),
       linhasConsideradas: contagens.linhas_positivas,
       exclusoes: [{ motivo: 'linhas com 0 un.', quantidade: contagens.linhas_zero }],
     };
