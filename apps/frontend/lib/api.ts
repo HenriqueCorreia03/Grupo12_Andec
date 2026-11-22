@@ -232,6 +232,48 @@ export function obterDetalheOnda(onda: string): Promise<DetalheOnda | null> {
   return obter(`/api/ondas-e-pedidos/ondas/${encodeURIComponent(onda)}`, { nuloSe404: true });
 }
 
+/** Contrato de GET /api/qualidade (ticket 13): sempre sobre o dataset completo. */
+export interface Qualidade {
+  contagens: {
+    linhasCO: number;
+    linhasDuplicadas: number;
+    unidadesDuplicadas: number;
+    linhasZero: number;
+    pedidosZero: number;
+    linhasTamanhoVazio: number;
+    linhasForaDasEscalas: number;
+    linhasSemCorrespondencia: number;
+    percentagemSemCorrespondencia: number | null;
+    ondasSemPicking: number;
+    unidadesOndasSemPicking: number;
+  };
+  recolhidoVsEncomendado: {
+    encomendado: number;
+    recolhido: number;
+    diferenca: number;
+    ondasSemPicking: number;
+    referenciasNuncaRecolhidas: number;
+    nReferenciasNuncaRecolhidas: number;
+    semCausaConhecida: number;
+  };
+  naoMapeadas: {
+    /** RC-01 primeiro, depois por unidades. */
+    localizacoes: { localizacao: string; unidades: number; referencias: number }[];
+    unidades: number;
+    percentagemRecolhido: number | null;
+  };
+  ligacoesRepartidas: { linhasLigadas: number; linhasRepartidas: number; valor: number | null };
+  escalaPorConfirmar: { linhasCO: number; linhasPW: number; estado: "por confirmar" };
+  limitacoes: string[];
+  perguntasAoDocente: string[];
+  filtrosNaoAplicaveis: string[];
+}
+
+/** Página de qualidade dos dados: os filtros só servem para a API os devolver como "não aplicáveis". */
+export function obterQualidade(filtros: FiltrosUrl = {}): Promise<Qualidade> {
+  return obter(`/api/qualidade${consulta(filtros)}`);
+}
+
 /** Ocupação, paragens e localizações por onda (PW), com a lista de ondas. */
 export function obterPicking(filtros: FiltrosUrl = {}): Promise<PickingDasOndas> {
   return obter(`/api/ondas-e-pedidos/picking${consulta(filtros)}`);

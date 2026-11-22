@@ -55,6 +55,23 @@ export function naoAplicaveis(filtros: Filtros, origem: 'CO' | 'PW'): string[] {
 }
 
 /**
+ * Todos os filtros ativos, pelo nome que a interface mostra. Para o que é sempre calculado sobre o dataset
+ * completo (página de qualidade, matriz das alavancas): qualquer filtro ativo é "não aplicável".
+ */
+export function filtrosAtivos(filtros: Filtros): string[] {
+  const ativos: [string, boolean][] = [
+    ['período', filtros.inicio !== null || filtros.fim !== null],
+    ['referência', filtros.referencia !== null],
+    ['classe ABC', filtros.classe !== null],
+    ['operador', filtros.operador !== null],
+    ['zona', filtros.zona !== null],
+    ['onda', filtros.onda !== null],
+    ['pedido', filtros.pedido !== null],
+  ];
+  return ativos.filter(([, ativo]) => ativo).map(([nome]) => nome);
+}
+
+/**
  * Lê e valida os parâmetros de filtro da query string; qualquer erro é um 400 com mensagem clara.
  * - `inicio` e `fim` (aaaa-mm-dd) vêm sempre juntos; sem nenhum, é todo o histórico.
  * - `mes=aaaa-mm` equivale a `inicio` e `fim` desse mês e não se combina com eles.
