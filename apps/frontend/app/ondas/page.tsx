@@ -4,6 +4,7 @@ import { ErroApi } from "@/components/erro-api";
 import { obterOndasEPedidos, type OndasEPedidos } from "@/lib/api";
 import { filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
+import { DetalheDaOnda } from "./detalhe-onda";
 import { PickingOndas } from "./picking-ondas";
 
 export default function OndasPage({ searchParams }: PageProps<"/ondas">) {
@@ -26,6 +27,11 @@ async function IndicadoresDasOndas({ searchParams }: { searchParams: PageProps<"
   const filtros = filtrosDeObjeto(await searchParams);
   return (
     <>
+      {filtros.onda !== undefined && (
+        <div className="sm:col-span-2 lg:col-span-3">
+          <DetalheDaOnda onda={filtros.onda} filtros={filtros} />
+        </div>
+      )}
       <PedidosDivididosCartao filtros={filtros} />
       <PickingOndas filtros={filtros} />
     </>

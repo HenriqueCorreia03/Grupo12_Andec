@@ -1,7 +1,8 @@
 import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
-import { obterPicking, type OcupacaoDasOndas, type PickingDasOndas } from "@/lib/api";
-import type { FiltrosUrl } from "@/lib/filtros";
+import Link from "next/link";
+import { obterPicking, type OcupacaoDasOndas, type OndaPicking, type PickingDasOndas } from "@/lib/api";
+import { consulta, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarNumeroOuNulo, formatarPercentagemOuNulo } from "@/lib/formatar";
 
 /** Indicadores de picking por onda (ticket 04): só apresenta, os valores vêm calculados pela API. */
@@ -45,6 +46,7 @@ export async function PickingOndas({ filtros }: { filtros: FiltrosUrl }) {
       </CartaoIndicador>
 
       <GraficoOcupacao ocupacao={ocupacao} />
+      {filtros.onda === undefined && <ListaDeOndas ondas={dados.ondas} filtros={filtros} />}
     </>
   );
 }
@@ -90,5 +92,49 @@ function GraficoOcupacao({ ocupacao }: { ocupacao: OcupacaoDasOndas }) {
         Laranja = 24 un. (a capacidade); cinzento-escuro = mais de 24 un. Fonte: Picking_Wave.
       </p>
     </figure>
+  );
+}
+
+const ONDAS_NA_LISTA = 25;
+
+/** As primeiras ondas do filtro atual; cada uma abre o detalhe (drill-through), mantendo os filtros globais. */
+function ListaDeOndas({ ondas, filtros }: { ondas: OndaPicking[]; filtros: FiltrosUrl }) {
+  if (ondas.length === 0) return null;
+  return (
+    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm sm:col-span-2 lg:col-span-3">
+      <table className="w-full text-sm">
+        <caption className="px-4 py-3 text-left text-sm font-medium text-stone-500">
+          Ondas (primeiras {formatarNumero(Math.min(ONDAS_NA_LISTA, ondas.length))} de {formatarNumero(ondas.length)}):
+          clique numa onda para ver o detalhe. Use os filtros (mês, zona, operador…) para chegar a outras.
+        </caption>
+        <thead className="border-y border-stone-200 bg-stone-50 text-left text-stone-500">
+          <tr>
+            <th className="px-4 py-2 font-normal">Onda</th>
+            <th className="px-4 py-2 font-normal">Data</th>
+            <th className="px-4 py-2 text-right font-normal">Unidades</th>
+            <th className="px-4 py-2 text-right font-normal">Ocupação</th>
+            <th className="px-4 py-2 text-right font-normal">Localizações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ondas.slice(0, ONDAS_NA_LISTA).map((o) => (
+            <tr key={o.onda} className="border-t border-stone-100">
+              <td className="px-4 py-1.5">
+                <Link
+                  href={`/ondas${consulta({ ...filtros, onda: o.onda })}`}
+                  className="font-medium underline-offset-2 hover:underline"
+                >
+                  {o.onda}
+                </Link>
+              </td>
+              <td className="px-4 py-1.5 text-stone-500">{o.data ? `${o.data} ${o.hora ?? ""}` : "—"}</td>
+              <td className="px-4 py-1.5 text-right">{formatarNumero(o.unidades)}</td>
+              <td className="px-4 py-1.5 text-right">{formatarPercentagemOuNulo(o.ocupacao)}</td>
+              <td className="px-4 py-1.5 text-right">{formatarNumero(o.localizacoes)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

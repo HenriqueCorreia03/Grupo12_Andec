@@ -202,6 +202,36 @@ export function obterOndasEPedidos(filtros: FiltrosUrl = {}): Promise<OndasEPedi
   return obter(`/api/ondas-e-pedidos${consulta(filtros)}`);
 }
 
+/** Contrato de GET /api/ondas-e-pedidos/ondas/:onda (ticket 09): a onda completa, não depende dos outros filtros. */
+export interface PedidoDaOnda {
+  pedido: string;
+  unidades: number;
+  unidadesDoPedido: number;
+  linhas: number;
+  dividido: boolean;
+  outrasOndas: string[];
+}
+
+export interface DetalheOnda {
+  onda: string;
+  data: string | null;
+  hora: string | null;
+  unidadesRecolhidas: number | null;
+  ocupacao: number | null;
+  pedidos: PedidoDaOnda[];
+  linhas: { pedido: string; referencia: string; tamanho: number | null; unidades: number; duplicada: boolean }[];
+  localizacoes: { localizacao: string; zona: string | null; unidades: number }[];
+  zonas: { zona: string; unidades: number }[];
+  naoMapeadas: number;
+  operadores: { customerOrder: string[]; pickingWave: string[] };
+  exclusoes: Exclusao[];
+}
+
+/** Detalhe de uma onda (pedidos, linhas, localizações, zonas e operadores); nulo se a onda não existir. */
+export function obterDetalheOnda(onda: string): Promise<DetalheOnda | null> {
+  return obter(`/api/ondas-e-pedidos/ondas/${encodeURIComponent(onda)}`, { nuloSe404: true });
+}
+
 /** Ocupação, paragens e localizações por onda (PW), com a lista de ondas. */
 export function obterPicking(filtros: FiltrosUrl = {}): Promise<PickingDasOndas> {
   return obter(`/api/ondas-e-pedidos/picking${consulta(filtros)}`);
