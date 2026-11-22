@@ -65,3 +65,48 @@ export const product = pgTable('product', {
   abccod: text('abccod').notNull(),
   sector: text('sector').notNull(),
 });
+
+/** Picking_Wave tal como está no CSV (texto, com o nº da linha de origem). */
+export const rawPickingWave = pgTable('raw_picking_wave', {
+  sourceLine: integer('source_line').primaryKey(),
+  waveNumber: text('wave_number'),
+  reference: text('reference'),
+  size: text('size'),
+  quantity: text('quantity'),
+  location: text('location'),
+  operator: text('operator'),
+});
+
+/** Picking_Wave normalizado: 1 linha = 1 un. recolhida; sem regra de duplicados. */
+export const pickingWave = pgTable('picking_wave', {
+  id: serial('id').primaryKey(),
+  sourceLine: integer('source_line').notNull(),
+  waveNumber: text('wave_number').notNull(),
+  reference: text('reference').notNull(),
+  /** Tamanho normalizado (mesma função que o CO); nulo quando vem vazio. */
+  size: doublePrecision('size'),
+  quantity: integer('quantity').notNull(),
+  /** Localização sem espaços. */
+  location: text('location').notNull(),
+  operator: text('operator').notNull(),
+});
+
+/** Storage_Location tal como está no CSV (texto, com o nº da linha de origem). */
+export const rawStorageLocation = pgTable('raw_storage_location', {
+  sourceLine: integer('source_line').primaryKey(),
+  originalLocation: text('original_location'),
+  position: text('position'),
+  x: text('x'),
+  y: text('y'),
+  z: text('z'),
+});
+
+/** Localizações mapeadas (as que existem no Storage_Location); a zona é o prefixo antes do 1.º hífen. */
+export const storageLocation = pgTable('storage_location', {
+  location: text('location').primaryKey(),
+  sourceLine: integer('source_line').notNull(),
+  position: text('position').notNull(),
+  x: integer('x').notNull(),
+  y: integer('y').notNull(),
+  z: integer('z').notNull(),
+});
