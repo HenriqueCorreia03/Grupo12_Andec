@@ -220,7 +220,7 @@ export class IndicadoresService {
       with ${linhasFiltradas(filtros)}
       select
         ${product.sector} as setor,
-        sum(${customerOrder.quantity})::int as unidades,
+        sum(${customerOrder.quantity})::float8 as unidades,
         sum(${customerOrder.quantity})::float8 * 100 / sum(sum(${customerOrder.quantity})) over () as percentagem
       from ${customerOrder}
       join ${product} on ${product.reference} = ${customerOrder.reference}

@@ -29,6 +29,13 @@
       "when": 1795312667096,
       "tag": "0003_picking_wave_storage_location",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795376027295,
+      "tag": "0004_customer_order_zone",
+      "breakpoints": true
     }
   ]
 }

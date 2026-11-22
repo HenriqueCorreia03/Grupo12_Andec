@@ -1,8 +1,10 @@
 import {
   boolean,
   doublePrecision,
+  index,
   integer,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -110,3 +112,17 @@ export const storageLocation = pgTable('storage_location', {
   y: integer('y').notNull(),
   z: integer('z').notNull(),
 });
+
+/**
+ * Ligação CO ↔ PW: zona das unidades encomendadas, calculada no ETL (spec, "Ligação CO ↔ PW").
+ * `zone` é o prefixo de uma zona mapeada, "nao-mapeada" ou "sem-zona"; `units` é fracionária.
+ */
+export const customerOrderZone = pgTable(
+  'customer_order_zone',
+  {
+    lineId: integer('line_id').notNull(),
+    zone: text('zone').notNull(),
+    units: doublePrecision('units').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.lineId, table.zone] }), index('customer_order_zone_zone_idx').on(table.zone)],
+);

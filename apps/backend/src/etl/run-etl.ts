@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { connect } from '../db/connection';
 import { CustomerOrderSummary, loadCustomerOrder } from './customer-order';
+import { CustomerOrderZoneSummary, loadCustomerOrderZone } from './customer-order-zone';
 import { loadPickingWave, PickingWaveSummary } from './picking-wave';
 import { loadProduct, ProductSummary } from './product';
 import { loadStorageLocation, StorageLocationSummary } from './storage-location';
@@ -16,6 +17,7 @@ export interface EtlSummary {
   product: ProductSummary;
   pickingWave: PickingWaveSummary;
   storageLocation: StorageLocationSummary;
+  customerOrderZone: CustomerOrderZoneSummary;
 }
 
 /** Pasta das migrações SQL geradas pelo drizzle-kit (igual a partir de src/ e de dist/). */
@@ -30,12 +32,15 @@ export async function runEtl({ databaseUrl, dataDir }: EtlOptions): Promise<EtlS
   const { db, close } = connect(databaseUrl);
   try {
     await migrate(db, { migrationsFolder: MIGRATIONS });
-    return await db.transaction(async (tx) => ({
-      customerOrder: await loadCustomerOrder(tx, dataDir),
-      product: await loadProduct(tx, dataDir),
-      pickingWave: await loadPickingWave(tx, dataDir),
-      storageLocation: await loadStorageLocation(tx, dataDir),
-    }));
+    return await db.transaction(async (tx) => {
+      const customerOrder = await loadCustomerOrder(tx, dataDir);
+      const product = await loadProduct(tx, dataDir);
+      const pickingWave = await loadPickingWave(tx, dataDir);
+      const storageLocation = await loadStorageLocation(tx, dataDir);
+      // A ligação CO ↔ PW precisa das quatro tabelas já carregadas.
+      const customerOrderZone = await loadCustomerOrderZone(tx);
+      return { customerOrder, product, pickingWave, storageLocation, customerOrderZone };
+    });
   } finally {
     await close();
   }

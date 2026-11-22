@@ -1,7 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
 import { sql, type SQL } from 'drizzle-orm';
-import { customerOrder, pickingWave } from '../db/schema';
+import { customerOrder, pickingWave, storageLocation } from '../db/schema';
 import { abcGlobal, CLASSES_ABC, type ClasseAbc } from './abc';
+import { atribuicaoPorLinha } from './ligacao';
 
 /**
  * Filtros globais comuns a todos os endpoints (ticket 06a; spec, "Filtros").
@@ -22,6 +23,12 @@ export interface Filtros {
   classe: ClasseAbc | null;
   /** Operador recolhedor (PW). Só se aplica aos indicadores de picking; nos de encomenda é "não aplicável". */
   operador: string | null;
+  /**
+   * Zonas (prefixo da localização mapeada), uma ou várias (`zona=K,O`). Na encomenda, conta a parte das unidades
+   * atribuída a essas zonas pela ligação CO ↔ PW (um pedido entra se tiver mais de 0 un. em qualquer uma delas);
+   * no picking, a zona da localização recolhida.
+   */
+  zona: string[] | null;
   /** Onda: aplica-se ao CO e ao PW (a chave comum). */
   onda: string | null;
   /** Pedido: só existe no CO; nos indicadores de picking é "não aplicável" (o PW não tem número de pedido). */
@@ -34,6 +41,7 @@ export const SEM_FILTROS: Filtros = {
   referencia: null,
   classe: null,
   operador: null,
+  zona: null,
   onda: null,
   pedido: null,
 };
@@ -59,13 +67,14 @@ export function lerFiltros(query: Record<string, unknown>): Filtros {
   const referencia = texto(query, 'referencia');
   const classe = texto(query, 'classe');
   const operador = texto(query, 'operador');
+  const zona = listaDeZonas(texto(query, 'zona'));
   const onda = texto(query, 'onda');
   const pedido = texto(query, 'pedido');
 
   if (classe !== null && !(CLASSES_ABC as string[]).includes(classe)) {
     throw new BadRequestException(`Classe ABC inválida "${classe}" (use A, B ou C).`);
   }
-  const outros = { referencia, classe: classe as ClasseAbc | null, operador, onda, pedido };
+  const outros = { referencia, classe: classe as ClasseAbc | null, operador, zona, onda, pedido };
 
   if (mes !== null) {
     if (inicio !== null || fim !== null) {
@@ -84,6 +93,16 @@ export function lerFiltros(query: Record<string, unknown>): Filtros {
     }
   }
   return { inicio, fim, ...outros };
+}
+
+/** `K,O` → ["K", "O"] (sem repetições, pela ordem pedida); um elemento vazio é um erro. */
+function listaDeZonas(valor: string | null): string[] | null {
+  if (valor === null) return null;
+  const zonas = valor.split(',').map((z) => z.trim());
+  if (zonas.some((z) => z === '')) {
+    throw new BadRequestException(`Zona inválida "${valor}" (use uma ou várias zonas separadas por vírgulas, por exemplo K,O).`);
+  }
+  return [...new Set(zonas)];
 }
 
 /** Valor de um parâmetro; nulo se ausente ou vazio. Um parâmetro repetido ou composto é um erro. */
@@ -118,9 +137,28 @@ function periodoDoMes(mes: string): { inicio: string; fim: string } {
   return { inicio: `${mes}-01`, fim: `${mes}-${String(ultimoDia).padStart(2, '0')}` };
 }
 
+/** `('K', 'O')` como parâmetros SQL. */
+function listaSql(valores: string[]): SQL {
+  return sql.join(valores.map((v) => sql`${v}`), sql`, `);
+}
+
 /** Linhas do CO que cumprem os filtros (medidas aditivas: unidades, linhas). */
 export function selecionarLinhasCO(filtros: Filtros): SQL {
-  return sql`select * from ${customerOrder} as base where ${condicoesCO(filtros, sql`base`)}`;
+  if (filtros.zona === null) {
+    return sql`select * from ${customerOrder} as base where ${condicoesCO(filtros, sql`base`)}`;
+  }
+  // Com filtro de zona só ficam as linhas com mais de 0 un. atribuídas à zona, e `quantity` passa a ser essa parte.
+  return sql`
+    select
+      base.id, base.source_line, base.customer, base.order_number, base.order_to_collect, base.reference, base.size,
+      base.size_scale_unconfirmed, base.size_out_of_known_scales, z.unidades as quantity, base.created_at,
+      base.wave_number, base.operator, base.is_duplicate, base.is_zero
+    from ${customerOrder} as base
+    join (
+      select id, sum(unidades) as unidades from (${atribuicaoPorLinha()}) a where a.zona in (${listaSql(filtros.zona)}) group by id
+    ) z on z.id = base.id
+    where z.unidades > 0 and ${condicoesCO(filtros, sql`base`)}
+  `;
 }
 
 /**
@@ -188,6 +226,11 @@ function condicoesPicking(filtros: Filtros, alias: SQL): SQL {
   if (filtros.referencia !== null) condicoes.push(sql`${alias}.reference = ${filtros.referencia}`);
   if (filtros.classe !== null) condicoes.push(sql`${alias}.reference in (${referenciasDaClasse(filtros.classe)})`);
   if (filtros.operador !== null) condicoes.push(sql`${alias}.operator = ${filtros.operador}`);
+  if (filtros.zona !== null) {
+    condicoes.push(
+      sql`${alias}.location in (select location from ${storageLocation} where split_part(location, '-', 1) in (${listaSql(filtros.zona)}))`,
+    );
+  }
   if (filtros.onda !== null) condicoes.push(sql`${alias}.wave_number = ${filtros.onda}`);
   return condicoes.length === 0 ? sql`true` : sql.join(condicoes, sql` and `);
 }
