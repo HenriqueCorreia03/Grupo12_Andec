@@ -7,7 +7,7 @@ export interface Exclusao {
 /** O que todos os indicadores trazem para o tooltip. */
 export interface MetadadosIndicador {
   definicao: string;
-  fonte: "Customer_Order" | "Customer_Order + Product";
+  fonte: "Customer_Order" | "Customer_Order + Product" | "Picking_Wave" | "Picking_Wave + Storage_Location";
   linhasConsideradas: number;
   exclusoes: Exclusao[];
   nota?: string;
@@ -82,6 +82,61 @@ export interface OndasEPedidos {
   pedidosDivididos: PedidosDivididos;
 }
 
+/** Contrato de GET /api/ondas-e-pedidos/picking (ticket 04). */
+export interface OcupacaoDasOndas extends MetadadosIndicador {
+  valor: number | null;
+  ondas: number;
+  ondasCom24: number;
+  ondasMaisDe24: number;
+  percentagemCom24: number | null;
+  minimo: number | null;
+  maximo: number | null;
+  distribuicao: { unidades: number; ondas: number }[];
+}
+
+export interface Paragens extends MetadadosIndicador {
+  valor: number;
+}
+
+export interface LocalizacoesPorOnda extends MetadadosIndicador {
+  media: number | null;
+  mediana: number | null;
+  maximo: number | null;
+  distribuicao: { localizacoes: number; ondas: number }[];
+}
+
+export interface OndaPicking {
+  onda: string;
+  data: string | null;
+  hora: string | null;
+  unidades: number;
+  ocupacao: number;
+  paragens: number;
+  localizacoes: number;
+}
+
+export interface PickingDasOndas {
+  ocupacao: OcupacaoDasOndas;
+  paragens: Paragens;
+  localizacoesPorOnda: LocalizacoesPorOnda;
+  ondas: OndaPicking[];
+}
+
+/** Contrato de GET /api/artigos/zonas (ticket 04). */
+export interface ParticipacaoPorZona extends MetadadosIndicador {
+  zonas: { zona: string; unidades: number; percentagem: number }[];
+  naoMapeadas: {
+    unidades: number;
+    percentagem: number | null;
+    rc01Unidades: number;
+    localizacoes: { localizacao: string; unidades: number }[];
+  };
+}
+
+export interface ZonasDoPicking {
+  participacaoPorZona: ParticipacaoPorZona;
+}
+
 function apiUrl(path: string): string {
   const base = process.env.NEXT_PUBLIC_API_URL;
   if (!base) {
@@ -108,6 +163,16 @@ export function obterVisaoGeral(): Promise<VisaoGeral> {
 /** Indicadores da página Ondas e pedidos (pedidos divididos). */
 export function obterOndasEPedidos(): Promise<OndasEPedidos> {
   return obter("/api/ondas-e-pedidos");
+}
+
+/** Ocupação, paragens e localizações por onda (PW), com a lista de ondas. */
+export function obterPicking(): Promise<PickingDasOndas> {
+  return obter("/api/ondas-e-pedidos/picking");
+}
+
+/** Participação por zona e localizações não mapeadas (PW + Storage_Location). */
+export function obterZonas(): Promise<ZonasDoPicking> {
+  return obter("/api/artigos/zonas");
 }
 
 /** ABC global; com `classe`, só as referências dessa classe. */

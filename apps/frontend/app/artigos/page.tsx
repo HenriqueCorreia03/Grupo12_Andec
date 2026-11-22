@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ErroApi } from "@/components/erro-api";
 import { CLASSES_ABC, obterAbc, obterTamanhos, type ClasseAbc, type ReferenciasAbc } from "@/lib/api";
 import { formatarNumero, formatarPercentagem } from "@/lib/formatar";
+import { ParticipacaoZonas } from "./zonas";
 
 export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
   return (
@@ -14,6 +15,12 @@ export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
       <Suspense fallback={<div className="mt-6 h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
         <DrillDownAbc searchParams={searchParams} />
       </Suspense>
+      <h2 className="mt-10 text-lg font-semibold">Zonas e localizações não mapeadas</h2>
+      <div className="mt-4">
+        <Suspense fallback={<div className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
+          <ParticipacaoZonas />
+        </Suspense>
+      </div>
     </section>
   );
 }

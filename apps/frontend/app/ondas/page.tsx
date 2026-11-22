@@ -3,6 +3,7 @@ import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components
 import { ErroApi } from "@/components/erro-api";
 import { obterOndasEPedidos, type OndasEPedidos } from "@/lib/api";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
+import { PickingOndas } from "./picking-ondas";
 
 export default function OndasPage() {
   return (
@@ -14,6 +15,7 @@ export default function OndasPage() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Suspense fallback={<div className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
           <PedidosDivididosCartao />
+          <PickingOndas />
         </Suspense>
       </div>
     </section>
