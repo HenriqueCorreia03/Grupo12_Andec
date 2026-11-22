@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AbcService } from './abc.service';
 import { ArtigosController } from './artigos.controller';
+import { DetalheOndaController } from './detalhe-onda.controller';
+import { DetalheOndaService } from './detalhe-onda.service';
 import { IndicadoresService } from './indicadores.service';
 import { OndasEPedidosController } from './ondas-e-pedidos.controller';
 import { PedidosDivididosService } from './pedidos-divididos.service';
@@ -11,7 +13,14 @@ import { ZonasController } from './zonas.controller';
 import { ZonasService } from './zonas.service';
 
 @Module({
-  controllers: [VisaoGeralController, ArtigosController, OndasEPedidosController, PickingController, ZonasController],
-  providers: [IndicadoresService, AbcService, PedidosDivididosService, PickingService, ZonasService],
+  controllers: [
+    VisaoGeralController,
+    ArtigosController,
+    OndasEPedidosController,
+    PickingController,
+    ZonasController,
+    DetalheOndaController,
+  ],
+  providers: [IndicadoresService, AbcService, PedidosDivididosService, PickingService, ZonasService, DetalheOndaService],
 })
 export class IndicadoresModule {}
