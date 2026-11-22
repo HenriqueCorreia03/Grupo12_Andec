@@ -92,6 +92,7 @@ export class PickingService {
         exclusoes: [],
       },
       paragens: {
+        natureza: 'volume',
         valor: ondas.length === 0 ? null : localizacoes.reduce((total, n) => total + n, 0),
         definicao: 'Pares distintos (onda, localização) no PW; a mesma localização em duas ondas conta duas vezes.',
         fonte: 'Picking_Wave',

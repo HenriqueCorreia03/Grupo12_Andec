@@ -1,3 +1,8 @@
+import type { Comparacao } from './comparacao.service';
+
+/** Como um indicador se compara com o período anterior: volume por dia com atividade, rácio diretamente. */
+export type NaturezaIndicador = 'volume' | 'rácio';
+
 /** Linhas, pedidos ou ondas que ficaram fora de um indicador, com o motivo. */
 export interface Exclusao {
   motivo: string;
@@ -14,4 +19,11 @@ export interface Metadados {
   /** Filtros pedidos que este indicador não consegue aplicar (por exemplo, o operador num indicador de encomenda). */
   filtrosNaoAplicaveis: string[];
   nota?: string;
+  /**
+   * Volume (contagens, unidades): compara-se com o período anterior por dia com atividade.
+   * Rácio (por omissão): compara-se diretamente (spec, "Comparação no tempo").
+   */
+  natureza?: NaturezaIndicador;
+  /** Comparação com o período anterior; juntada a todos os indicadores com valor único (ticket 08). */
+  comparacao?: Comparacao;
 }
