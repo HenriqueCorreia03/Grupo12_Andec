@@ -6,6 +6,20 @@ export interface Exclusao {
   quantidade: number;
 }
 
+/** Comparação com o período anterior (ticket 08). */
+export type Comparacao =
+  | { disponivel: false; texto: "sem período anterior"; motivo: "sem filtro de período" | "período anterior antes do início dos dados" }
+  | {
+      disponivel: true;
+      periodoAnterior: { inicio: string; fim: string };
+      modo: "direto" | "por dia com atividade";
+      valorAtual: number | null;
+      valorAnterior: number | null;
+      /** Variação relativa × 100 (sem arredondamento); nula sem dados para comparar. */
+      variacao: number | null;
+      diasComAtividade: { atual: number; anterior: number };
+    };
+
 /** O que todos os indicadores trazem para o tooltip. */
 export interface MetadadosIndicador {
   definicao: string;
@@ -20,6 +34,9 @@ export interface MetadadosIndicador {
   /** Filtros pedidos que este indicador não consegue aplicar (por exemplo, "operador" num indicador de encomenda). */
   filtrosNaoAplicaveis: string[];
   nota?: string;
+  natureza?: "volume" | "rácio";
+  /** Só nos indicadores com um valor único; ausente nos que não têm (listas de setores, classes ABC). */
+  comparacao?: Comparacao;
 }
 
 export interface TamanhoMedioEncomenda extends MetadadosIndicador {
@@ -124,6 +141,13 @@ export interface MatrizAlavancas {
   filtrosNaoAplicaveis: string[];
 }
 
+export interface IndicadorVolume extends MetadadosIndicador {
+  natureza: "volume";
+  valor: number | null;
+  diasComAtividade: number;
+  porDiaComAtividade: number | null;
+}
+
 export interface VisaoGeral {
   tamanhoMedioEncomenda: TamanhoMedioEncomenda;
   pedidosPorOnda: PedidosPorOnda;
@@ -131,6 +155,30 @@ export interface VisaoGeral {
   pedidosMultissetor: PedidosMultissetor;
   abc: ResumoAbc;
   matriz: MatrizAlavancas;
+  volume: { pedidos: IndicadorVolume; unidades: IndicadorVolume };
+}
+
+/** GET /api/visao-geral/serie-mensal: todos os meses dos dados, por dia com atividade. */
+export interface SerieMensal {
+  meses: {
+    mes: string;
+    parcial: boolean;
+    diasComAtividade: number;
+    domingos: number;
+    pedidos: number;
+    unidades: number;
+    ondasRecolhidas: number;
+    pedidosPorDia: number | null;
+    unidadesPorDia: number | null;
+    ondasRecolhidasPorDia: number | null;
+    tamanhoMedio: number | null;
+  }[];
+  definicao: string;
+  fonte: "Customer_Order + Picking_Wave";
+  nota: string;
+  filtrosNaoAplicaveis: string[];
+  linhasConsideradas: number;
+  exclusoes: Exclusao[];
 }
 
 /** Contrato de GET /api/ondas-e-pedidos. */
@@ -242,6 +290,11 @@ async function obter<T>(path: string, opcoes?: { nuloSe404: true }): Promise<T |
 /** O frontend só obtém valores através da API do backend. */
 export function obterVisaoGeral(filtros: FiltrosUrl = {}): Promise<VisaoGeral> {
   return obter(`/api/visao-geral${consulta(filtros)}`);
+}
+
+/** Série mensal por dia com atividade (todos os filtros, incluindo o período). */
+export function obterSerieMensal(filtros: FiltrosUrl = {}): Promise<SerieMensal> {
+  return obter(`/api/visao-geral/serie-mensal${consulta(filtros)}`);
 }
 
 /** Indicadores da página Ondas e pedidos (pedidos divididos). */

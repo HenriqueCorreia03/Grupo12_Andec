@@ -24,3 +24,28 @@ export function formatarNumeroOuNulo(valor: number | null): string | null {
 export function formatarPercentagemOuNulo(valor: number | null): string | null {
   return valor === null ? null : formatarPercentagem(valor);
 }
+
+/** Variação relativa já × 100, com sinal: "+59,52 %", "−22,75 %", "0 %". */
+export function formatarVariacao(valor: number): string {
+  if (valor === 0) return "0 %";
+  const sinal = valor > 0 ? "+" : "\u2212";
+  return `${sinal}${formatarPercentagem(Math.abs(valor))}`;
+}
+
+/** aaaa-mm-dd → dd/mm/aaaa. */
+export function formatarData(dia: string): string {
+  const [ano, mes, d] = dia.split("-");
+  return `${d}/${mes}/${ano}`;
+}
+
+const NOMES_MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+/** aaaa-mm → "mar 2023". */
+export function formatarMes(mes: string): string {
+  return `${formatarMesCurto(mes)} ${mes.split("-")[0]}`;
+}
+
+/** aaaa-mm → "mar" (eixo dos gráficos mensais, todos do mesmo ano). */
+export function formatarMesCurto(mes: string): string {
+  return NOMES_MESES[Number(mes.split("-")[1]) - 1];
+}
