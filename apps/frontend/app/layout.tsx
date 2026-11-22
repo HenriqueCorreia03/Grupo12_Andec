@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Navegacao } from "@/components/navegacao";
+import { PainelFiltros } from "@/components/painel-filtros";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,7 +19,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <p className="text-sm text-stone-500">Armazém de calçado</p>
             <p className="text-lg font-semibold">Prioridades de operação</p>
           </div>
-          <Navegacao />
+          {/* Os dois leem o URL (useSearchParams): precisam de um limite de Suspense. */}
+          <Suspense fallback={<div className="h-10" />}>
+            <Navegacao />
+          </Suspense>
+          <Suspense fallback={<div className="h-24 border-t border-stone-200 bg-stone-50" />}>
+            <PainelFiltros />
+          </Suspense>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
       </body>

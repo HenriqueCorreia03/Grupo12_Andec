@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder, product } from '../db/schema';
 import { AbcService, type ResumoAbc } from './abc.service';
+import { type Filtros, linhasFiltradas, pedidosQuePassam, SEM_FILTROS } from './filtros';
 import type { Exclusao, Metadados } from './metadados';
 
 export type { Exclusao, Metadados };
@@ -86,18 +87,18 @@ export class IndicadoresService {
     private readonly abc: AbcService,
   ) {}
 
-  async visaoGeral(): Promise<VisaoGeral> {
-    const contagens = await this.contagens();
+  async visaoGeral(filtros: Filtros = SEM_FILTROS): Promise<VisaoGeral> {
+    const contagens = await this.contagens(filtros);
     return {
-      tamanhoMedioEncomenda: await this.tamanhoMedioEncomenda(contagens),
-      pedidosPorOnda: await this.pedidosPorOnda(contagens),
-      participacaoPorSetor: await this.participacaoPorSetor(contagens),
-      pedidosMultissetor: await this.pedidosMultissetor(contagens),
-      abc: await this.abc.resumo(),
+      tamanhoMedioEncomenda: await this.tamanhoMedioEncomenda(contagens, filtros),
+      pedidosPorOnda: await this.pedidosPorOnda(contagens, filtros),
+      participacaoPorSetor: await this.participacaoPorSetor(contagens, filtros),
+      pedidosMultissetor: await this.pedidosMultissetor(contagens, filtros),
+      abc: await this.abc.resumo(filtros),
     };
   }
 
-  private async contagens(): Promise<Contagens> {
+  private async contagens(filtros: Filtros): Promise<Contagens> {
     const { rows } = await this.db.execute<{
       linhas_positivas: number;
       linhas_positivas_com_produto: number;
@@ -107,7 +108,7 @@ export class IndicadoresService {
       linhas_sem_produto: number;
       setores: number;
     }>(sql`
-      with linhas as (
+      with ${linhasFiltradas(filtros)}, linhas as (
         select
           ${customerOrder.orderNumber} as pedido,
           ${customerOrder.waveNumber} as onda,
@@ -138,14 +139,14 @@ export class IndicadoresService {
     };
   }
 
-  private async tamanhoMedioEncomenda(contagens: Contagens): Promise<TamanhoMedioEncomenda> {
+  private async tamanhoMedioEncomenda(contagens: Contagens, filtros: Filtros): Promise<TamanhoMedioEncomenda> {
     const { rows } = await this.db.execute<{
       valor: number | null;
       mediana: number | null;
       p90: number | null;
       pedidos_considerados: number;
     }>(sql`
-      with validos as (
+      with ${linhasFiltradas(filtros)}, validos as (
         select sum(${customerOrder.quantity}) as unidades
         from ${customerOrder}
         group by ${customerOrder.orderNumber}
@@ -174,7 +175,7 @@ export class IndicadoresService {
     };
   }
 
-  private async pedidosPorOnda(contagens: Contagens): Promise<PedidosPorOnda> {
+  private async pedidosPorOnda(contagens: Contagens, filtros: Filtros): Promise<PedidosPorOnda> {
     // Linhas > 0 só existem em pedidos válidos, por isso basta filtrar as linhas.
     const { rows } = await this.db.execute<{
       valor: number | null;
@@ -182,7 +183,7 @@ export class IndicadoresService {
       ondas: number;
       ondas_com_um_pedido: number;
     }>(sql`
-      with por_onda as (
+      with ${linhasFiltradas(filtros)}, por_onda as (
         select count(distinct ${customerOrder.orderNumber}) as pedidos
         from ${customerOrder}
         where ${customerOrder.quantity} > 0
@@ -211,9 +212,10 @@ export class IndicadoresService {
     };
   }
 
-  private async participacaoPorSetor(contagens: Contagens): Promise<ParticipacaoPorSetor> {
+  private async participacaoPorSetor(contagens: Contagens, filtros: Filtros): Promise<ParticipacaoPorSetor> {
     // Numerador e denominador usam as mesmas linhas (> 0 e com referência no Product), por isso somam 100 %.
     const { rows } = await this.db.execute<{ setor: string; unidades: number; percentagem: number }>(sql`
+      with ${linhasFiltradas(filtros)}
       select
         ${product.sector} as setor,
         sum(${customerOrder.quantity})::int as unidades,
@@ -235,13 +237,15 @@ export class IndicadoresService {
     };
   }
 
-  private async pedidosMultissetor(contagens: Contagens): Promise<PedidosMultissetor> {
+  private async pedidosMultissetor(contagens: Contagens, filtros: Filtros): Promise<PedidosMultissetor> {
     const { rows } = await this.db.execute<{ multissetor: number; validos: number }>(sql`
-      with pedidos as (
+      with passam as (${pedidosQuePassam(filtros)}),
+      -- Multissetor é uma propriedade do pedido: os setores são os do pedido completo, não só os das linhas filtradas.
+      pedidos as (
         select count(distinct ${product.sector}) as setores
         from ${customerOrder}
         left join ${product} on ${product.reference} = ${customerOrder.reference}
-        where ${customerOrder.quantity} > 0
+        where ${customerOrder.quantity} > 0 and ${customerOrder.orderNumber} in (select order_number from passam)
         group by ${customerOrder.orderNumber}
       )
       select

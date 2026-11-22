@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder } from '../db/schema';
+import { type Filtros, pedidosQuePassam, SEM_FILTROS, selecionarLinhasCO } from './filtros';
 import type { Metadados } from './metadados';
 
 /** Limiar da onda de 24 un.: acima dele a divisão é inevitável (spec, "Pedidos divididos"). */
@@ -28,11 +29,11 @@ export interface OndasEPedidos {
 export class PedidosDivididosService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async ondasEPedidos(): Promise<OndasEPedidos> {
-    return { pedidosDivididos: await this.pedidosDivididos() };
+  async ondasEPedidos(filtros: Filtros = SEM_FILTROS): Promise<OndasEPedidos> {
+    return { pedidosDivididos: await this.pedidosDivididos(filtros) };
   }
 
-  private async pedidosDivididos(): Promise<PedidosDivididos> {
+  private async pedidosDivididos(filtros: Filtros): Promise<PedidosDivididos> {
     const { rows } = await this.db.execute<{
       validos: number;
       divididos: number;
@@ -42,22 +43,25 @@ export class PedidosDivididosService {
       linhas_zero: number;
       pedidos_zero: number;
     }>(sql`
-      with pedidos as (
+      with passam as (${pedidosQuePassam(filtros)}),
+      -- Propriedades do pedido (ondas, unidades): sempre com o pedido completo.
+      pedidos as (
         select
           count(distinct ${customerOrder.waveNumber}) filter (where ${customerOrder.quantity} > 0) as ondas,
-          sum(${customerOrder.quantity}) as unidades,
-          count(*) filter (where ${customerOrder.quantity} > 0) as linhas_positivas,
-          count(*) filter (where ${customerOrder.quantity} = 0) as linhas_zero
+          sum(${customerOrder.quantity}) as unidades
         from ${customerOrder}
+        where ${customerOrder.orderNumber} in (select order_number from passam)
         group by ${customerOrder.orderNumber}
-      )
+      ),
+      -- Linhas que passam os filtros (medida aditiva).
+      linhas as (${selecionarLinhasCO(filtros)})
       select
         (count(*) filter (where unidades > 0))::int as validos,
         (count(*) filter (where unidades > 0 and ondas > 1))::int as divididos,
         (count(*) filter (where unidades > 0 and ondas > 1 and unidades > ${LIMITE_UNIDADES}))::int as divididos_mais_de_24,
         (count(*) filter (where unidades > 0 and ondas > 1 and unidades <= ${LIMITE_UNIDADES}))::int as divididos_ate_24,
-        coalesce(sum(linhas_positivas), 0)::int as linhas_positivas,
-        coalesce(sum(linhas_zero), 0)::int as linhas_zero,
+        (select count(*)::int from linhas where quantity > 0) as linhas_positivas,
+        (select count(*)::int from linhas where quantity = 0) as linhas_zero,
         (count(*) filter (where unidades = 0))::int as pedidos_zero
       from pedidos
     `);

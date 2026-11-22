@@ -1,13 +1,14 @@
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
 import { obterZonas, type ParticipacaoPorZona } from "@/lib/api";
+import type { FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagem, formatarPercentagemOuNulo } from "@/lib/formatar";
 
 /** Participação por zona e localizações não mapeadas (ticket 04): só apresenta, os valores vêm da API. */
-export async function ParticipacaoZonas() {
+export async function ParticipacaoZonas({ filtros }: { filtros: FiltrosUrl }) {
   let zonas: ParticipacaoPorZona;
   try {
-    zonas = (await obterZonas()).participacaoPorZona;
+    zonas = (await obterZonas(filtros)).participacaoPorZona;
   } catch (e) {
     return <ErroApi mensagem={(e as Error).message} />;
   }

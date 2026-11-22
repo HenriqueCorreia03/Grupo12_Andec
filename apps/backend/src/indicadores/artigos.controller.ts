@@ -1,26 +1,26 @@
 import { BadRequestException, Controller, Get, Param, Query } from '@nestjs/common';
-import { CLASSES_ABC, type ClasseAbc } from './abc';
 import { AbcService, type ReferenciasAbc, type TamanhosReferencia } from './abc.service';
+import { lerFiltros } from './filtros';
 
 @Controller('api/artigos')
 export class ArtigosController {
   constructor(private readonly abc: AbcService) {}
 
-  /** ABC global; `?classe=A|B|C` devolve só as referências dessa classe (drill-down). */
+  /** ABC; `?classe=A|B|C` (classe global) devolve só as referências dessa classe (drill-down). */
   @Get('abc')
-  referencias(@Query('classe') classe?: string): Promise<ReferenciasAbc> {
-    return this.abc.referencias(parseClasse(classe));
+  referencias(@Query() query: Record<string, unknown>): Promise<ReferenciasAbc> {
+    return this.abc.referencias(lerFiltros(query));
   }
 
-  /** Drill-down referência → unidades por tamanho normalizado. */
+  /** Drill-down referência → unidades por tamanho (no período filtrado). */
   @Get('referencias/:referencia/tamanhos')
-  tamanhos(@Param('referencia') referencia: string): Promise<TamanhosReferencia> {
-    return this.abc.tamanhos(referencia);
+  tamanhos(@Param('referencia') referencia: string, @Query() query: Record<string, unknown>): Promise<TamanhosReferencia> {
+    const filtros = lerFiltros(query);
+    if (filtros.referencia !== null && filtros.referencia !== referencia) {
+      throw new BadRequestException(
+        `O parâmetro referencia ("${filtros.referencia}") difere da referência do caminho ("${referencia}").`,
+      );
+    }
+    return this.abc.tamanhos(referencia, filtros);
   }
-}
-
-function parseClasse(valor: string | undefined): ClasseAbc | null {
-  if (valor === undefined || valor === '') return null;
-  if ((CLASSES_ABC as string[]).includes(valor)) return valor as ClasseAbc;
-  throw new BadRequestException(`Classe ABC inválida "${valor}" (use A, B ou C).`);
 }

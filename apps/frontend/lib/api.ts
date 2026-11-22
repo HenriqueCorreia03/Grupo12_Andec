@@ -1,3 +1,5 @@
+import { consulta, soPeriodo, type FiltrosUrl } from "./filtros";
+
 /** Contrato de GET /api/visao-geral (backend NestJS). */
 export interface Exclusao {
   motivo: string;
@@ -44,13 +46,22 @@ export type ClasseAbc = "A" | "B" | "C";
 export const CLASSES_ABC: ClasseAbc[] = ["A", "B", "C"];
 
 export interface ResumoAbc extends MetadadosIndicador {
-  classes: { classe: ClasseAbc; referencias: number; unidades: number; percentagemUnidades: number }[];
+  /** Classes no período, só com as referências com movimento; a % é nula quando não há unidades ("sem dados"). */
+  classes: { classe: ClasseAbc; referencias: number; unidades: number; percentagemUnidades: number | null }[];
   totalReferencias: number;
 }
 
 export interface ReferenciasAbc extends ResumoAbc {
   classeSelecionada: ClasseAbc | null;
-  referencias: { referencia: string; posicao: number; unidades: number; acumuladoAntes: number; classe: ClasseAbc }[];
+  /** `classe` é a global (fixa, a do filtro); `classePeriodo` é a do período, nula sem movimento. */
+  referencias: {
+    referencia: string;
+    posicao: number | null;
+    unidades: number;
+    acumuladoAntes: number | null;
+    classe: ClasseAbc;
+    classePeriodo: ClasseAbc | null;
+  }[];
 }
 
 export interface TamanhosReferencia {
@@ -95,7 +106,7 @@ export interface OcupacaoDasOndas extends MetadadosIndicador {
 }
 
 export interface Paragens extends MetadadosIndicador {
-  valor: number;
+  valor: number | null;
 }
 
 export interface LocalizacoesPorOnda extends MetadadosIndicador {
@@ -110,6 +121,7 @@ export interface OndaPicking {
   data: string | null;
   hora: string | null;
   unidades: number;
+  unidadesDaOnda: number;
   ocupacao: number;
   paragens: number;
   localizacoes: number;
@@ -156,31 +168,34 @@ async function obter<T>(path: string, opcoes?: { nuloSe404: true }): Promise<T |
 }
 
 /** O frontend só obtém valores através da API do backend. */
-export function obterVisaoGeral(): Promise<VisaoGeral> {
-  return obter("/api/visao-geral");
+export function obterVisaoGeral(filtros: FiltrosUrl = {}): Promise<VisaoGeral> {
+  return obter(`/api/visao-geral${consulta(filtros)}`);
 }
 
 /** Indicadores da página Ondas e pedidos (pedidos divididos). */
-export function obterOndasEPedidos(): Promise<OndasEPedidos> {
-  return obter("/api/ondas-e-pedidos");
+export function obterOndasEPedidos(filtros: FiltrosUrl = {}): Promise<OndasEPedidos> {
+  return obter(`/api/ondas-e-pedidos${consulta(filtros)}`);
 }
 
 /** Ocupação, paragens e localizações por onda (PW), com a lista de ondas. */
-export function obterPicking(): Promise<PickingDasOndas> {
-  return obter("/api/ondas-e-pedidos/picking");
+export function obterPicking(filtros: FiltrosUrl = {}): Promise<PickingDasOndas> {
+  return obter(`/api/ondas-e-pedidos/picking${consulta(filtros)}`);
 }
 
 /** Participação por zona e localizações não mapeadas (PW + Storage_Location). */
-export function obterZonas(): Promise<ZonasDoPicking> {
-  return obter("/api/artigos/zonas");
+export function obterZonas(filtros: FiltrosUrl = {}): Promise<ZonasDoPicking> {
+  return obter(`/api/artigos/zonas${consulta(filtros)}`);
 }
 
-/** ABC global; com `classe`, só as referências dessa classe. */
-export function obterAbc(classe: ClasseAbc | null): Promise<ReferenciasAbc> {
-  return obter(classe ? `/api/artigos/abc?classe=${classe}` : "/api/artigos/abc");
+/** ABC no período, com as referências do âmbito dos filtros (a classe do filtro é a global). */
+export function obterAbc(filtros: FiltrosUrl = {}): Promise<ReferenciasAbc> {
+  return obter(`/api/artigos/abc${consulta(filtros)}`);
 }
 
-/** Unidades por tamanho normalizado de uma referência; nulo se a referência não tiver procura. */
-export function obterTamanhos(referencia: string): Promise<TamanhosReferencia | null> {
-  return obter(`/api/artigos/referencias/${encodeURIComponent(referencia)}/tamanhos`, { nuloSe404: true });
+/** Unidades por tamanho normalizado de uma referência no período; nulo se a referência não tiver procura. */
+export function obterTamanhos(referencia: string, filtros: FiltrosUrl = {}): Promise<TamanhosReferencia | null> {
+  return obter(
+    `/api/artigos/referencias/${encodeURIComponent(referencia)}/tamanhos${consulta(soPeriodo(filtros))}`,
+    { nuloSe404: true },
+  );
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { consulta, filtrosDoUrl } from "@/lib/filtros";
 
 const PAGINAS = [
   { href: "/", titulo: "Visão geral" },
@@ -10,8 +11,10 @@ const PAGINAS = [
   { href: "/qualidade", titulo: "Qualidade dos dados" },
 ] as const;
 
+/** Navegação entre as 4 páginas; os filtros ativos vão no URL de cada ligação, por isso mantêm-se. */
 export function Navegacao() {
   const pathname = usePathname();
+  const filtros = consulta(filtrosDoUrl(useSearchParams()));
   return (
     <nav aria-label="Páginas" className="mx-auto flex max-w-6xl gap-1 px-6">
       {PAGINAS.map(({ href, titulo }) => {
@@ -19,7 +22,7 @@ export function Navegacao() {
         return (
           <Link
             key={href}
-            href={href}
+            href={`${href}${filtros}`}
             aria-current={ativa ? "page" : undefined}
             className={
               "border-b-2 px-3 py-2 text-sm " +
