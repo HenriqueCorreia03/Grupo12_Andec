@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
+import { MatrizAlavancasView } from "@/components/matriz-alavancas";
 import { obterVisaoGeral, type VisaoGeral } from "@/lib/api";
 import { consulta, filtrosDeObjeto } from "@/lib/filtros";
 import {
@@ -24,8 +25,23 @@ export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
           <IndicadoresMinimos searchParams={searchParams} />
         </Suspense>
       </div>
+      <div className="mt-6">
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
+          <Matriz searchParams={searchParams} />
+        </Suspense>
+      </div>
     </section>
   );
+}
+
+async function Matriz({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+  const filtros = filtrosDeObjeto(await searchParams);
+  try {
+    const { matriz } = await obterVisaoGeral(filtros);
+    return <MatrizAlavancasView matriz={matriz} />;
+  } catch (e) {
+    return <ErroApi mensagem={(e as Error).message} />;
+  }
 }
 
 async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {

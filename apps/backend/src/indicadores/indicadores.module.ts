@@ -4,6 +4,7 @@ import { ArtigosController } from './artigos.controller';
 import { DetalheOndaController } from './detalhe-onda.controller';
 import { DetalheOndaService } from './detalhe-onda.service';
 import { IndicadoresService } from './indicadores.service';
+import { MatrizService } from './matriz.service';
 import { OndasEPedidosController } from './ondas-e-pedidos.controller';
 import { PedidosDivididosService } from './pedidos-divididos.service';
 import { PickingController } from './picking.controller';
@@ -21,6 +22,14 @@ import { ZonasService } from './zonas.service';
     ZonasController,
     DetalheOndaController,
   ],
-  providers: [IndicadoresService, AbcService, PedidosDivididosService, PickingService, ZonasService, DetalheOndaService],
+  providers: [
+    IndicadoresService,
+    AbcService,
+    MatrizService,
+    PedidosDivididosService,
+    PickingService,
+    ZonasService,
+    DetalheOndaService,
+  ],
 })
 export class IndicadoresModule {}

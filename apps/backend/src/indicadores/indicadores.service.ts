@@ -4,6 +4,7 @@ import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder, product } from '../db/schema';
 import { AbcService, type ResumoAbc } from './abc.service';
 import { type Filtros, linhasFiltradas, pedidosQuePassam, SEM_FILTROS, naoAplicaveis } from './filtros';
+import { MatrizService, type Matriz } from './matriz.service';
 import type { Exclusao, Metadados } from './metadados';
 
 export type { Exclusao, Metadados };
@@ -46,6 +47,7 @@ export interface VisaoGeral {
   participacaoPorSetor: ParticipacaoPorSetor;
   pedidosMultissetor: PedidosMultissetor;
   abc: ResumoAbc;
+  matriz: Matriz;
 }
 
 /** Linhas, pedidos e ondas que os indicadores de encomenda consideram ou deixam de fora. */
@@ -85,6 +87,7 @@ export class IndicadoresService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly abc: AbcService,
+    private readonly matrizService: MatrizService,
   ) {}
 
   async visaoGeral(filtros: Filtros = SEM_FILTROS): Promise<VisaoGeral> {
@@ -95,6 +98,7 @@ export class IndicadoresService {
       participacaoPorSetor: await this.participacaoPorSetor(contagens, filtros),
       pedidosMultissetor: await this.pedidosMultissetor(contagens, filtros),
       abc: await this.abc.resumo(filtros),
+      matriz: await this.matrizService.matriz(filtros),
     };
   }
 

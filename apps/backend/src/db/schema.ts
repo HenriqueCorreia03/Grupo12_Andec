@@ -114,6 +114,16 @@ export const storageLocation = pgTable('storage_location', {
 });
 
 /**
+ * Esforço da matriz das alavancas (ticket 12): juízo da equipa, carregado pelo ETL a partir do ficheiro
+ * versionado `apps/backend/config/esforco-matriz.json`. `alavanca` é "a" ou "b"; `nota` 1 (alto) a 3 (baixo).
+ */
+export const esforcoMatriz = pgTable('esforco_matriz', {
+  alavanca: text('alavanca').primaryKey(),
+  nota: integer('nota').notNull(),
+  justificacao: text('justificacao').notNull(),
+});
+
+/**
  * Ligação CO ↔ PW: zona das unidades encomendadas, calculada no ETL (spec, "Ligação CO ↔ PW").
  * `zone` é o prefixo de uma zona mapeada, "nao-mapeada" ou "sem-zona"; `units` é fracionária.
  */

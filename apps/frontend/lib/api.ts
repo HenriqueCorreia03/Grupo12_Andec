@@ -78,12 +78,59 @@ export interface TamanhosReferencia {
   tamanhos: { tamanho: number | null; unidades: number; escalaPorConfirmar: boolean }[];
 }
 
+export type NotaMatriz = 1 | 2 | 3;
+
+/** Critério da matriz medido pelo backend (impacto ou robustez). */
+export interface CriterioMedido {
+  valor: number | null;
+  nota: NotaMatriz | null;
+  numerador: number;
+  denominador: number;
+  medida: string;
+  regra: string;
+  /** Aviso quando o valor fica a menos de 1 ponto de um limiar; nulo nos outros casos. */
+  avisoLimiar: string | null;
+}
+
+export interface EsforcoMatriz {
+  nota: NotaMatriz;
+  rotulo: "alto" | "médio" | "baixo";
+  origem: "juízo da equipa";
+  justificacao: string;
+}
+
+/** Contrato de `matriz` em GET /api/visao-geral (ticket 12). */
+export interface MatrizAlavancas {
+  a: {
+    impacto: CriterioMedido & {
+      artigosA: number;
+      artigosComRc01NasMaisUsadas: number;
+      sensibilidade: { localizacoes: number; valor: number | null }[];
+    };
+    robustez: CriterioMedido;
+    esforco: EsforcoMatriz;
+  };
+  b: {
+    impacto: CriterioMedido & {
+      unidades: number;
+      unidadesTotais: number;
+      percentagemUnidades: number | null;
+      notaUnidades: NotaMatriz | null;
+    };
+    robustez: CriterioMedido;
+    esforco: EsforcoMatriz;
+  };
+  nota: string;
+  filtrosNaoAplicaveis: string[];
+}
+
 export interface VisaoGeral {
   tamanhoMedioEncomenda: TamanhoMedioEncomenda;
   pedidosPorOnda: PedidosPorOnda;
   participacaoPorSetor: ParticipacaoPorSetor;
   pedidosMultissetor: PedidosMultissetor;
   abc: ResumoAbc;
+  matriz: MatrizAlavancas;
 }
 
 /** Contrato de GET /api/ondas-e-pedidos. */

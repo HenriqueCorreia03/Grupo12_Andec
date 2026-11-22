@@ -1,0 +1,13 @@
+{
+  "descricao": "Esforço da matriz das duas alavancas (ticket 12). É um juízo qualitativo da equipa, não uma medição: nota 1 = alto, 2 = médio, 3 = baixo. Carregado pelo ETL (npm run etl).",
+  "alavancas": {
+    "a": {
+      "nota": 1,
+      "justificacao": "Implica mover stock fisicamente, reetiquetar e atualizar as localizações no sistema, com o picking condicionado durante a mudança; o RC-01 (155 referências) obriga a reorganizar uma área inteira."
+    },
+    "b": {
+      "nota": 2,
+      "justificacao": "É sobretudo uma regra de planeamento (não dividir pedidos com ≤ 24 un.), sem mover stock, mas muda o lançamento das ondas e tem de ser validada com a operação."
+    }
+  }
+}
