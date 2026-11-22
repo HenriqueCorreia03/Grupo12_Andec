@@ -68,6 +68,20 @@ export interface VisaoGeral {
   abc: ResumoAbc;
 }
 
+/** Contrato de GET /api/ondas-e-pedidos. */
+export interface PedidosDivididos extends MetadadosIndicador {
+  valor: number | null;
+  pedidosDivididos: number;
+  pedidosValidos: number;
+  divididosMaisDe24: number;
+  divididosAte24: number;
+  percentagemAte24: number | null;
+}
+
+export interface OndasEPedidos {
+  pedidosDivididos: PedidosDivididos;
+}
+
 /** Contrato de GET /api/ondas-e-pedidos/picking (ticket 04). */
 export interface OcupacaoDasOndas extends MetadadosIndicador {
   valor: number | null;
@@ -144,6 +158,11 @@ async function obter<T>(path: string, opcoes?: { nuloSe404: true }): Promise<T |
 /** O frontend só obtém valores através da API do backend. */
 export function obterVisaoGeral(): Promise<VisaoGeral> {
   return obter("/api/visao-geral");
+}
+
+/** Indicadores da página Ondas e pedidos (pedidos divididos). */
+export function obterOndasEPedidos(): Promise<OndasEPedidos> {
+  return obter("/api/ondas-e-pedidos");
 }
 
 /** Ocupação, paragens e localizações por onda (PW), com a lista de ondas. */
