@@ -2,10 +2,11 @@ import { Suspense } from "react";
 import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
 import { obterOndasEPedidos, type OndasEPedidos } from "@/lib/api";
+import { filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
 import { PickingOndas } from "./picking-ondas";
 
-export default function OndasPage() {
+export default function OndasPage({ searchParams }: PageProps<"/ondas">) {
   return (
     <section>
       <h1 className="text-2xl font-semibold">Ondas e pedidos</h1>
@@ -14,18 +15,27 @@ export default function OndasPage() {
       </p>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Suspense fallback={<div className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
-          <PedidosDivididosCartao />
-          <PickingOndas />
+          <IndicadoresDasOndas searchParams={searchParams} />
         </Suspense>
       </div>
     </section>
   );
 }
 
-async function PedidosDivididosCartao() {
+async function IndicadoresDasOndas({ searchParams }: { searchParams: PageProps<"/ondas">["searchParams"] }) {
+  const filtros = filtrosDeObjeto(await searchParams);
+  return (
+    <>
+      <PedidosDivididosCartao filtros={filtros} />
+      <PickingOndas filtros={filtros} />
+    </>
+  );
+}
+
+async function PedidosDivididosCartao({ filtros }: { filtros: FiltrosUrl }) {
   let dados: OndasEPedidos;
   try {
-    dados = await obterOndasEPedidos();
+    dados = await obterOndasEPedidos(filtros);
   } catch (e) {
     return <ErroApi mensagem={(e as Error).message} />;
   }

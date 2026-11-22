@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
 import { obterVisaoGeral, type VisaoGeral } from "@/lib/api";
+import { consulta, filtrosDeObjeto } from "@/lib/filtros";
 import {
   formatarNumero,
   formatarNumeroOuNulo,
@@ -10,7 +11,7 @@ import {
   formatarPercentagemOuNulo,
 } from "@/lib/formatar";
 
-export default function VisaoGeralPage() {
+export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
   return (
     <section>
       <h1 className="text-2xl font-semibold">Visão geral</h1>
@@ -20,17 +21,18 @@ export default function VisaoGeralPage() {
       </p>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Suspense fallback={<CartoesACarregar />}>
-          <IndicadoresMinimos />
+          <IndicadoresMinimos searchParams={searchParams} />
         </Suspense>
       </div>
     </section>
   );
 }
 
-async function IndicadoresMinimos() {
+async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+  const filtros = filtrosDeObjeto(await searchParams);
   let dados: VisaoGeral;
   try {
-    dados = await obterVisaoGeral();
+    dados = await obterVisaoGeral(filtros);
   } catch (e) {
     return <ErroApi mensagem={(e as Error).message} />;
   }
@@ -116,12 +118,12 @@ async function IndicadoresMinimos() {
             {abc.classes.map((c) => (
               <tr key={c.classe}>
                 <td className="py-0.5">
-                  <Link href={`/artigos?classe=${c.classe}`} className="font-semibold underline-offset-2 hover:underline">
+                  <Link href={`/artigos${consulta({ ...filtros, classe: c.classe })}`} className="font-semibold underline-offset-2 hover:underline">
                     {c.classe}
                   </Link>
                 </td>
                 <td className="text-right font-medium">{formatarNumero(c.referencias)}</td>
-                <td className="text-right font-medium">{formatarPercentagem(c.percentagemUnidades)}</td>
+                <td className="text-right font-medium">{formatarPercentagemOuNulo(c.percentagemUnidades) ?? "sem dados"}</td>
               </tr>
             ))}
           </tbody>

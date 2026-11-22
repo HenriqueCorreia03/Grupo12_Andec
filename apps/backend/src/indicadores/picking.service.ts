@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder, pickingWave } from '../db/schema';
+import { type Filtros, SEM_FILTROS, selecionarLinhasPicking } from './filtros';
 import type { Metadados } from './metadados';
 
 /** Capacidade de referência da onda (um alvo, não um limite; spec, "Ocupação da onda"). */
@@ -22,8 +23,8 @@ export interface OcupacaoDasOndas extends Metadados {
 }
 
 export interface Paragens extends Metadados {
-  /** Pares distintos (onda, localização). */
-  valor: number;
+  /** Pares distintos (onda, localização); nulo quando a seleção não tem ondas ("sem dados"). */
+  valor: number | null;
 }
 
 export interface LocalizacoesPorOnda extends Metadados {
@@ -40,7 +41,11 @@ export interface OndaPicking {
   data: string | null;
   /** Hora de criação mais antiga dos pedidos da onda no CO (hh:mm); nulo se a onda não existir no CO. */
   hora: string | null;
+  /** Unidades recolhidas que passam os filtros (medida aditiva). */
   unidades: number;
+  /** Unidades recolhidas na onda completa (propriedade da onda: não depende dos filtros). */
+  unidadesDaOnda: number;
+  /** Unidades da onda completa ÷ 24 × 100. */
   ocupacao: number;
   paragens: number;
   localizacoes: number;
@@ -57,11 +62,12 @@ export interface PickingDasOndas {
 export class PickingService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async picking(): Promise<PickingDasOndas> {
-    const ondas = await this.ondas();
-    const unidades = ondas.map((o) => o.unidades);
+  async picking(filtros: Filtros = SEM_FILTROS): Promise<PickingDasOndas> {
+    const ondas = await this.ondas(filtros);
+    // A ocupação é uma propriedade da onda: usa as unidades da onda completa, não as que passam os filtros.
+    const unidades = ondas.map((o) => o.unidadesDaOnda);
     const localizacoes = ondas.map((o) => o.localizacoes);
-    const linhas = unidades.reduce((total, u) => total + u, 0);
+    const linhas = ondas.reduce((total, o) => total + o.unidades, 0);
     const mediaUnidades = media(unidades);
     const com24 = unidades.filter((u) => u === CAPACIDADE).length;
     const universo = 'Universo de ondas = PW (as ondas sem picking ficam de fora e contam na qualidade).';
@@ -85,7 +91,7 @@ export class PickingService {
         exclusoes: [],
       },
       paragens: {
-        valor: localizacoes.reduce((total, n) => total + n, 0),
+        valor: ondas.length === 0 ? null : localizacoes.reduce((total, n) => total + n, 0),
         definicao: 'Pares distintos (onda, localização) no PW; a mesma localização em duas ondas conta duas vezes.',
         fonte: 'Picking_Wave',
         linhasConsideradas: linhas,
@@ -106,12 +112,13 @@ export class PickingService {
     };
   }
 
-  private async ondas(): Promise<OndaPicking[]> {
+  private async ondas(filtros: Filtros): Promise<OndaPicking[]> {
     const { rows } = await this.db.execute<{
       onda: string;
       data: string | null;
       hora: string | null;
       unidades: number;
+      unidades_da_onda: number;
       localizacoes: number;
     }>(sql`
       with datas as (
@@ -119,11 +126,19 @@ export class PickingService {
         from ${customerOrder}
         group by ${customerOrder.waveNumber}
       ),
+      -- Só as linhas do PW que passam os filtros: unidades, paragens e localizações (medidas aditivas).
+      filtradas as (${selecionarLinhasPicking(filtros)}),
       recolhido as (
         select
-          ${pickingWave.waveNumber} as onda,
-          sum(${pickingWave.quantity})::int as unidades,
-          count(distinct ${pickingWave.location})::int as localizacoes
+          wave_number as onda,
+          sum(quantity)::int as unidades,
+          count(distinct location)::int as localizacoes
+        from filtradas
+        group by wave_number
+      ),
+      -- A onda completa, para a ocupação.
+      completa as (
+        select ${pickingWave.waveNumber} as onda, sum(${pickingWave.quantity})::int as unidades
         from ${pickingWave}
         group by ${pickingWave.waveNumber}
       )
@@ -132,8 +147,10 @@ export class PickingService {
         to_char(d.criada, 'YYYY-MM-DD') as data,
         to_char(d.criada, 'HH24:MI') as hora,
         r.unidades,
+        c.unidades as unidades_da_onda,
         r.localizacoes
       from recolhido r
+      join completa c on c.onda = r.onda
       left join datas d on d.onda = r.onda
       order by d.criada nulls last, r.onda
     `);
@@ -142,7 +159,8 @@ export class PickingService {
       data: r.data,
       hora: r.hora,
       unidades: r.unidades,
-      ocupacao: (r.unidades * 100) / CAPACIDADE,
+      unidadesDaOnda: r.unidades_da_onda,
+      ocupacao: (r.unidades_da_onda * 100) / CAPACIDADE,
       paragens: r.localizacoes,
       localizacoes: r.localizacoes,
     }));

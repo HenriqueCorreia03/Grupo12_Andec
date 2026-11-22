@@ -17,10 +17,18 @@ export const CLASSES_ABC: ClasseAbc[] = ['A', 'B', 'C'];
  * O filtro de classe (ticket 06a) usa esta classe global.
  */
 export function abcGlobal(): SQL {
+  return abcSobre(sql`${customerOrder}`);
+}
+
+/**
+ * O mesmo ABC, calculado sobre outras linhas do CO (por exemplo, só as do período filtrado: "classe no período").
+ * `origem` é o que vem depois do `from`; as colunas são as da tabela `customer_order`.
+ */
+export function abcSobre(origem: SQL): SQL {
   return sql`
     with por_referencia as (
       select ${customerOrder.reference} as referencia, sum(${customerOrder.quantity})::bigint as unidades
-      from ${customerOrder}
+      from ${origem}
       where ${customerOrder.quantity} > 0
       group by ${customerOrder.reference}
     ),

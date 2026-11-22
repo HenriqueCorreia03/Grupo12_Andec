@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { pickingWave, storageLocation } from '../db/schema';
+import { type Filtros, pickingFiltrado, SEM_FILTROS } from './filtros';
 import type { Metadados } from './metadados';
 
 /** Localização que a spec mostra sempre em separado dentro das não mapeadas. */
@@ -28,8 +29,9 @@ export interface ZonasDoPicking {
 export class ZonasService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async zonas(): Promise<ZonasDoPicking> {
+  async zonas(filtros: Filtros = SEM_FILTROS): Promise<ZonasDoPicking> {
     const { rows } = await this.db.execute<{ localizacao: string; zona: string | null; unidades: number }>(sql`
+      with ${pickingFiltrado(filtros)}
       select
         r.localizacao,
         case when s.location is not null then split_part(r.localizacao, '-', 1) end as zona,

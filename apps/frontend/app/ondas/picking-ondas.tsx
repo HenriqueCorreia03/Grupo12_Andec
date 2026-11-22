@@ -1,13 +1,14 @@
 import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
 import { obterPicking, type OcupacaoDasOndas, type PickingDasOndas } from "@/lib/api";
+import type { FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarNumeroOuNulo, formatarPercentagemOuNulo } from "@/lib/formatar";
 
 /** Indicadores de picking por onda (ticket 04): só apresenta, os valores vêm calculados pela API. */
-export async function PickingOndas() {
+export async function PickingOndas({ filtros }: { filtros: FiltrosUrl }) {
   let dados: PickingDasOndas;
   try {
-    dados = await obterPicking();
+    dados = await obterPicking(filtros);
   } catch (e) {
     return <ErroApi mensagem={(e as Error).message} />;
   }
@@ -29,8 +30,8 @@ export async function PickingOndas() {
         />
       </CartaoIndicador>
 
-      <CartaoIndicador titulo="Paragens" metadados={paragens} valorResumo={formatarNumero(paragens.valor)}>
-        <ValorIndicador texto={formatarNumero(paragens.valor)} unidade="(onda, localização)" />
+      <CartaoIndicador titulo="Paragens" metadados={paragens} valorResumo={formatarNumeroOuNulo(paragens.valor)}>
+        <ValorIndicador texto={formatarNumeroOuNulo(paragens.valor)} unidade="(onda, localização)" />
       </CartaoIndicador>
 
       <CartaoIndicador titulo="Localizações distintas por onda" metadados={localizacoes} valorResumo={mediaLocalizacoes}>
