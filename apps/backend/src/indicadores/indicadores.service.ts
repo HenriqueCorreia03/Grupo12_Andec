@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder, product } from '../db/schema';
 import { AbcService, type ResumoAbc } from './abc.service';
+import { diasComAtividade, porDiaComAtividade } from './atividade';
 import { type Filtros, linhasFiltradas, pedidosQuePassam, SEM_FILTROS, naoAplicaveis } from './filtros';
 import type { Exclusao, Metadados } from './metadados';
 
@@ -40,12 +41,24 @@ export interface PedidosMultissetor extends Metadados {
   limitacao: string | null;
 }
 
+/** Volume no período (comparado com o período anterior por dia com atividade). */
+export interface IndicadorVolume extends Metadados {
+  natureza: 'volume';
+  /** Total no período; nulo quando a seleção não tem linhas ("sem dados"). */
+  valor: number | null;
+  /** Dias com ≥ 1 pedido criado no período (domingos incluídos). */
+  diasComAtividade: number;
+  /** valor ÷ dias com atividade; nulo sem dados. */
+  porDiaComAtividade: number | null;
+}
+
 export interface VisaoGeral {
   tamanhoMedioEncomenda: TamanhoMedioEncomenda;
   pedidosPorOnda: PedidosPorOnda;
   participacaoPorSetor: ParticipacaoPorSetor;
   pedidosMultissetor: PedidosMultissetor;
   abc: ResumoAbc;
+  volume: { pedidos: IndicadorVolume; unidades: IndicadorVolume };
 }
 
 /** Linhas, pedidos e ondas que os indicadores de encomenda consideram ou deixam de fora. */
@@ -95,6 +108,49 @@ export class IndicadoresService {
       participacaoPorSetor: await this.participacaoPorSetor(contagens, filtros),
       pedidosMultissetor: await this.pedidosMultissetor(contagens, filtros),
       abc: await this.abc.resumo(filtros),
+      volume: await this.volume(contagens, filtros),
+    };
+  }
+
+  /** Pedidos válidos e unidades encomendadas que passam os filtros, com os dias com atividade do período. */
+  private async volume(contagens: Contagens, filtros: Filtros): Promise<VisaoGeral['volume']> {
+    const { rows } = await this.db.execute<{ pedidos: number; unidades: number }>(sql`
+      with ${linhasFiltradas(filtros)}
+      select
+        count(distinct ${customerOrder.orderNumber}) filter (where ${customerOrder.quantity} > 0)::int as pedidos,
+        coalesce(sum(${customerOrder.quantity}) filter (where ${customerOrder.quantity} > 0), 0)::float8 as unidades
+      from ${customerOrder}
+    `);
+    const [{ pedidos, unidades }] = rows;
+    const dias = await diasComAtividade(this.db, filtros);
+    const semDados = contagens.linhasPositivas === 0;
+    const comum = {
+      natureza: 'volume' as const,
+      fonte: 'Customer_Order' as const,
+      filtrosNaoAplicaveis: naoAplicaveis(filtros, 'CO'),
+      linhasConsideradas: contagens.linhasPositivas,
+      diasComAtividade: dias,
+    };
+    const indicador = (valor: number, definicao: string, motivos: MotivoExclusao[]): IndicadorVolume => ({
+      ...comum,
+      valor: semDados ? null : valor,
+      porDiaComAtividade: semDados ? null : porDiaComAtividade(valor, dias),
+      definicao,
+      exclusoes: exclusoes(contagens, ...motivos),
+    });
+    return {
+      pedidos: indicador(
+        pedidos,
+        'Nº de pedidos válidos (total > 0 un.) com linhas no período; compara-se por dia com atividade ' +
+          '(dia com ≥ 1 pedido criado, domingos incluídos).',
+        ['pedidosZero', 'linhasZero'],
+      ),
+      unidades: indicador(
+        unidades,
+        'Unidades encomendadas (linhas > 0) no período; compara-se por dia com atividade ' +
+          '(dia com ≥ 1 pedido criado, domingos incluídos).',
+        ['linhasZero'],
+      ),
     };
   }
 

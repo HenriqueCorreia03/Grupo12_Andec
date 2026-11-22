@@ -28,6 +28,7 @@ describe('Ondas e pedidos, pedidos divididos, fixture 4 (casos difíceis)', () =
     expect(Object.keys(corpo)).toEqual(['pedidosDivididos']);
     expect(Object.keys(corpo.pedidosDivididos).sort()).toEqual(
       [
+        'comparacao',
         'definicao',
         'divididosAte24',
         'divididosMaisDe24',

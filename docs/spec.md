@@ -342,7 +342,9 @@ Outros elementos extra, fora das tabelas de indicadores: comparação ABC ↔ AB
 - Janeiro e outubro são assinalados como meses parciais.
 - **Período anterior** = intervalo com a mesma duração imediatamente antes; com um mês selecionado, o mês anterior.
   - Os indicadores de volume comparam-se por dia com atividade. Os rácios (por exemplo, unidades por pedido, ocupação) comparam-se diretamente.
-  - Se o período anterior começar antes da data mínima dos dados carregados (05/01/2023 no dataset real), mostra "sem período anterior".
+  - Se o período anterior começar antes da data mínima dos dados carregados (05/01/2023 no dataset real), mostra "sem período anterior". Com um mês selecionado, o mês conta como unidade: o mês anterior só falha se for anterior ao mês da data mínima (por isso, no dataset real, fevereiro compara com janeiro parcial e janeiro fica "sem período anterior"; na fixture 4, março compara com fevereiro). Com um intervalo de datas, a regra aplica-se dia a dia (um intervalo que cubra exatamente um mês civil é tratado como esse mês). Sem filtro de período também se mostra "sem período anterior".
+  - A variação é (atual − anterior) ÷ anterior × 100; de 0 para 0 é 0 %; sem dados num dos lados, ou de 0 para outro valor, não há variação. Os indicadores sem um valor único (participação por setor, classes ABC) não têm variação.
+  - A série mensal aplica todos os filtros (com um mês escolhido mostra só esse mês); as ondas recolhidas vêm do PW pela data da onda. Um mês só em parte coberto pelos dados ou pelo período fica assinalado como parcial.
 
 ### Páginas (máximo 4: principal + 3 subpáginas)
 
@@ -589,6 +591,8 @@ PW:
 - **Medidas e limiares da matriz.** Impacto (a) = paragens de artigos A fora das 3 localizações mais usadas; impacto (b) = pedidos divididos com ≤ 24 un.; limiares revistos em 19/11/2026. Ainda a confirmar.
 - **Hora da onda** = hora de criação mais antiga dos seus pedidos (usada na P6).
 - Os indicadores de volume comparam-se por dia com atividade; os rácios comparam-se diretamente.
+- **Período anterior com um mês selecionado** (decidido no ticket 08, 22/11/2026): o mês conta como unidade para a regra "antes da data mínima". A regra à letra contradizia a fixture 4 (março comparado com fevereiro, com dados só a partir de 02/02/2023).
+- **Regras de pormenor da comparação** (ticket 08, a confirmar pela equipa): variação = (atual − anterior) ÷ anterior × 100, com 0 → 0 = 0 %; os dias com atividade são os da operação toda no período (os filtros de referência, zona, classe e operador não os mudam), para que "por dia" seja sempre por dia de operação.
 - **Percentis pelo método contínuo** (decidido no ticket 01, 19/11/2026). A mediana e o p90 usam `percentile_cont`, para coincidirem com MEDIANA e PERCENTIL.INC do Excel, onde as fixtures são validadas. No dataset completo, os métodos contínuo e discreto dão o mesmo resultado: mediana 2 e p90 13. As escolhas técnicas estão registadas em `docs/adr/0001-orm-e-graficos.md`.
 
 ### Notas de processo

@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from "react";
-import type { MetadadosIndicador } from "@/lib/api";
-import { formatarNumero } from "@/lib/formatar";
+import type { Comparacao, MetadadosIndicador } from "@/lib/api";
+import { formatarData, formatarNumero, formatarVariacao } from "@/lib/formatar";
 
 interface Props {
   titulo: string;
@@ -14,8 +14,8 @@ interface Props {
 
 /**
  * Cartão de um indicador. Só apresenta: os valores vêm calculados pela API.
- * Ao passar o rato (ou com o foco do teclado) mostra o tooltip com a definição,
- * a fonte, a nota e as linhas excluídas com o motivo.
+ * Ao passar o rato (ou com o foco do teclado) mostra o tooltip com a definição, o valor,
+ * a variação face ao período anterior, a fonte, a nota e as linhas excluídas com o motivo.
  */
 export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, children }: Props) {
   const tooltipId = useId();
@@ -59,6 +59,7 @@ function TooltipIndicador({
     >
       <p>{metadados.definicao}</p>
       <p className="mt-1">Valor: {valorResumo ?? "sem dados"}</p>
+      <p className="mt-1">{textoComparacao(metadados.comparacao)}</p>
       <p className="mt-1">Fonte: {metadados.fonte}</p>
       {metadados.nota && <p className="mt-1">{metadados.nota}</p>}
       <p className="mt-1">Linhas consideradas: {formatarNumero(metadados.linhasConsideradas)}</p>
@@ -70,6 +71,30 @@ function TooltipIndicador({
       </p>
     </div>
   );
+}
+
+/** Linha do tooltip com a variação face ao período anterior (ticket 08). */
+function textoComparacao(comparacao: Comparacao | undefined): string {
+  if (comparacao === undefined) return "Variação face ao período anterior: não se aplica (o indicador não tem um valor único).";
+  if (!comparacao.disponivel) {
+    const explicacao =
+      comparacao.motivo === "sem filtro de período"
+        ? "escolha um período para comparar"
+        : "o período anterior fica antes do início dos dados";
+    return `Variação: ${comparacao.texto} (${explicacao}).`;
+  }
+  const { periodoAnterior, modo, valorAtual, valorAnterior, variacao, diasComAtividade } = comparacao;
+  const intervalo = `${formatarData(periodoAnterior.inicio)} a ${formatarData(periodoAnterior.fim)}`;
+  const comoCompara =
+    modo === "por dia com atividade"
+      ? `por dia com atividade: ${diasComAtividade.atual} dias vs ${diasComAtividade.anterior}`
+      : "comparação direta";
+  const valores =
+    valorAtual === null || valorAnterior === null
+      ? "sem dados para comparar"
+      : `${formatarNumero(valorAnterior)} → ${formatarNumero(valorAtual)}`;
+  const percentagem = variacao === null ? "" : `${formatarVariacao(variacao)} `;
+  return `Variação face a ${intervalo} (${comoCompara}): ${percentagem}(${valores}).`;
 }
 
 /** Valor principal de um cartão; "sem dados" quando a API devolve nulo. */

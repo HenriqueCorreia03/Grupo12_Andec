@@ -2,8 +2,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
-import { obterVisaoGeral, type VisaoGeral } from "@/lib/api";
-import { consulta, filtrosDeObjeto } from "@/lib/filtros";
+import { GraficosSerieMensal } from "@/components/serie-mensal";
+import { obterSerieMensal, obterVisaoGeral, type SerieMensal, type VisaoGeral } from "@/lib/api";
+import { consulta, filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
 import {
   formatarNumero,
   formatarNumeroOuNulo,
@@ -24,6 +25,16 @@ export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
           <IndicadoresMinimos searchParams={searchParams} />
         </Suspense>
       </div>
+      <h2 className="mt-10 text-lg font-semibold">Evolução mensal por dia com atividade</h2>
+      <p className="mt-1 text-sm text-stone-500">
+        Valores do mês divididos pelos dias com pelo menos um pedido criado (domingos incluídos), para comparar meses com
+        números de dias diferentes.
+      </p>
+      <div className="mt-4">
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
+          <EvolucaoMensal searchParams={searchParams} />
+        </Suspense>
+      </div>
     </section>
   );
 }
@@ -36,7 +47,10 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
   } catch (e) {
     return <ErroApi mensagem={(e as Error).message} />;
   }
-  const { tamanhoMedioEncomenda: tamanho, pedidosPorOnda, participacaoPorSetor, pedidosMultissetor, abc } = dados;
+  const { tamanhoMedioEncomenda: tamanho, pedidosPorOnda, participacaoPorSetor, pedidosMultissetor, abc, volume } = dados;
+  const pedidosDia = formatarNumeroOuNulo(volume.pedidos.porDiaComAtividade);
+  const unidadesDia = formatarNumeroOuNulo(volume.unidades.porDiaComAtividade);
+  const temPeriodo = Boolean(filtros.mes || filtros.inicio);
   const tamanhoMedio = formatarNumeroOuNulo(tamanho.valor);
   const porOnda = formatarNumeroOuNulo(pedidosPorOnda.valor);
   const multissetor = formatarPercentagemOuNulo(pedidosMultissetor.valor);
@@ -105,7 +119,29 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
         />
       </CartaoIndicador>
 
-      <CartaoIndicador titulo="Classificação ABC (classe global)" metadados={abc} valorResumo={`${resumoAbc} referências`}>
+      <CartaoIndicador titulo="Pedidos por dia com atividade" metadados={volume.pedidos} valorResumo={pedidosDia}>
+        <ValorIndicador texto={pedidosDia} unidade="pedidos/dia" />
+        <DetalhesIndicador
+          detalhes={[
+            { rotulo: "Pedidos válidos", texto: formatarNumeroOuNulo(volume.pedidos.valor) },
+            { rotulo: "Dias com atividade", texto: formatarNumero(volume.pedidos.diasComAtividade) },
+          ]}
+        />
+      </CartaoIndicador>
+
+      <CartaoIndicador titulo="Unidades por dia com atividade" metadados={volume.unidades} valorResumo={unidadesDia}>
+        <ValorIndicador texto={unidadesDia} unidade="un./dia" />
+        <DetalhesIndicador
+          detalhes={[
+            { rotulo: "Unidades", texto: formatarNumeroOuNulo(volume.unidades.valor) },
+            { rotulo: "Dias com atividade", texto: formatarNumero(volume.unidades.diasComAtividade) },
+          ]}
+        />
+      </CartaoIndicador>
+
+      <CartaoIndicador
+        titulo={temPeriodo ? "Classificação ABC (classe no período)" : "Classificação ABC (classe global)"}
+        metadados={abc} valorResumo={`${resumoAbc} referências`}>
         <table className="mt-2 w-full text-sm">
           <thead>
             <tr className="text-left text-stone-500">
@@ -133,10 +169,21 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
   );
 }
 
+async function EvolucaoMensal({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+  const filtros: FiltrosUrl = filtrosDeObjeto(await searchParams);
+  let serie: SerieMensal;
+  try {
+    serie = await obterSerieMensal(filtros);
+  } catch (e) {
+    return <ErroApi mensagem={(e as Error).message} />;
+  }
+  return <GraficosSerieMensal serie={serie} mesSelecionado={filtros.mes ?? null} />;
+}
+
 function CartoesACarregar() {
   return (
     <>
-      {[0, 1, 2, 3, 4].map((i) => (
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
         <div key={i} className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />
       ))}
     </>
