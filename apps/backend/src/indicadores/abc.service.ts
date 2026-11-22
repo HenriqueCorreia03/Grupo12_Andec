@@ -100,7 +100,7 @@ export class AbcService {
       with ${linhasFiltradas(soPeriodo(filtros))}
       select
         ${customerOrder.size} as tamanho,
-        sum(${customerOrder.quantity})::int as unidades,
+        sum(${customerOrder.quantity})::float8 as unidades,
         bool_or(${customerOrder.sizeScaleUnconfirmed}) as escala_por_confirmar
       from ${customerOrder}
       where ${customerOrder.reference} = ${referencia} and ${customerOrder.quantity} > 0

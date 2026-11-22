@@ -38,10 +38,17 @@ describe('Filtros, validação dos parâmetros e "sem dados" (fixture 4)', () =>
       await rejeitado(`${endpoint}?classe=D`, /classe/i);
     });
 
-    it('rejeita operador, onda e pedido repetidos (400)', async () => {
+    it('rejeita operador, zona, onda e pedido repetidos (400)', async () => {
       await rejeitado(`${endpoint}?operador=Operator_1&operador=Operator_2`, /operador/i);
       await rejeitado(`${endpoint}?onda=W10&onda=W12`, /onda/i);
+      await rejeitado(`${endpoint}?zona=K&zona=O`, /zona/i);
       await rejeitado(`${endpoint}?pedido=P1&pedido=P2`, /pedido/i);
+    });
+
+    it('rejeita uma lista de zonas com elementos vazios (400); aceita K,O (200)', async () => {
+      await rejeitado(`${endpoint}?zona=K,,O`, /zona/i);
+      await rejeitado(`${endpoint}?zona=,`, /zona/i);
+      await resposta(`${endpoint}?zona=K,O`).expect(200);
     });
 
     it('aceita operador, onda e pedido (200)', async () => {

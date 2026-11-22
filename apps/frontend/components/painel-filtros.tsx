@@ -3,12 +3,15 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { CLASSES_ABC } from "@/lib/api";
-import { consulta, descreverFiltros, filtrosDoUrl, type FiltrosUrl } from "@/lib/filtros";
+import { consulta, descreverFiltros, filtrosDoUrl, zonasDoFiltro, type FiltrosUrl } from "@/lib/filtros";
 
 /**
  * Painel de filtros comum às 4 páginas. O estado vive no URL (não aqui): mudar de página mantém a seleção
  * e o painel mostra sempre os filtros ativos. Não faz contas de datas: o mês vai tal como está para a API.
  */
+/** Zonas do armazém mapeadas no Storage_Location (A a R). */
+const ZONAS = "ABCDEFGHIJKLMNOPQR".split("");
+
 export function PainelFiltros() {
   const filtros = filtrosDoUrl(useSearchParams());
   // A chave reinicia o formulário quando o URL muda (por exemplo, ao limpar ou ao navegar para trás).
@@ -23,6 +26,7 @@ function FormularioFiltros({ filtros }: { filtros: FiltrosUrl }) {
   const [fim, setFim] = useState(filtros.fim ?? "");
   const [referencia, setReferencia] = useState(filtros.referencia ?? "");
   const [classe, setClasse] = useState(filtros.classe ?? "");
+  const [zonas, setZonas] = useState<string[]>(zonasDoFiltro(filtros));
   const [operador, setOperador] = useState(filtros.operador ?? "");
   const [onda, setOnda] = useState(filtros.onda ?? "");
   const [pedido, setPedido] = useState(filtros.pedido ?? "");
@@ -48,6 +52,7 @@ function FormularioFiltros({ filtros }: { filtros: FiltrosUrl }) {
     }
     if (referencia.trim() !== "") novos.referencia = referencia.trim();
     if (classe !== "") novos.classe = classe;
+    if (zonas.length > 0) novos.zona = ZONAS.filter((z) => zonas.includes(z)).join(",");
     if (operador.trim() !== "") novos.operador = operador.trim();
     if (onda.trim() !== "") novos.onda = onda.trim();
     if (pedido.trim() !== "") novos.pedido = pedido.trim();
@@ -113,6 +118,24 @@ function FormularioFiltros({ filtros }: { filtros: FiltrosUrl }) {
             ))}
           </select>
         </label>
+        <details className="relative text-xs text-stone-500">
+          <summary className={`${campo} cursor-pointer list-none`}>
+            Zonas: {zonas.length === 0 ? "todas" : ZONAS.filter((z) => zonas.includes(z)).join(", ")}
+          </summary>
+          <fieldset className="absolute z-20 mt-1 grid w-64 grid-cols-6 gap-1 rounded border border-stone-300 bg-white p-2 shadow">
+            <legend className="sr-only">Zonas (pode escolher várias)</legend>
+            {ZONAS.map((z) => (
+              <label key={z} className="flex items-center gap-1 text-sm text-stone-800">
+                <input
+                  type="checkbox"
+                  checked={zonas.includes(z)}
+                  onChange={(e) => setZonas(e.target.checked ? [...zonas, z] : zonas.filter((x) => x !== z))}
+                />
+                {z}
+              </label>
+            ))}
+          </fieldset>
+        </details>
         <label className="text-xs text-stone-500">
           Operador (picking)
           <input type="text" value={operador} onChange={(e) => setOperador(e.target.value)} className={`${campo} block w-28`} />

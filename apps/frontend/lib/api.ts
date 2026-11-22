@@ -9,7 +9,12 @@ export interface Exclusao {
 /** O que todos os indicadores trazem para o tooltip. */
 export interface MetadadosIndicador {
   definicao: string;
-  fonte: "Customer_Order" | "Customer_Order + Product" | "Picking_Wave" | "Picking_Wave + Storage_Location";
+  fonte:
+    | "Customer_Order"
+    | "Customer_Order + Product"
+    | "Picking_Wave"
+    | "Picking_Wave + Storage_Location"
+    | "Customer_Order + Picking_Wave + Storage_Location";
   linhasConsideradas: number;
   exclusoes: Exclusao[];
   /** Filtros pedidos que este indicador não consegue aplicar (por exemplo, "operador" num indicador de encomenda). */
@@ -147,8 +152,26 @@ export interface ParticipacaoPorZona extends MetadadosIndicador {
   };
 }
 
+/** Unidades encomendadas repartidas por zona (ligação CO ↔ PW); fracionárias, arredondadas só ao mostrar. */
+export interface UnidadesEncomendadasPorZona extends MetadadosIndicador {
+  zonas: { zona: string; unidades: number }[];
+  naoMapeada: number;
+  semZona: number;
+  total: number;
+}
+
+export interface PedidosMultizona extends MetadadosIndicador {
+  valor: number | null;
+  pedidosMultizona: number;
+  pedidosValidos: number;
+}
+
 export interface ZonasDoPicking {
+  /** Zonas do filtro, a destacar; as repartições mostram sempre todas as zonas. */
+  zonasSelecionadas: string[];
   participacaoPorZona: ParticipacaoPorZona;
+  unidadesEncomendadasPorZona: UnidadesEncomendadasPorZona;
+  pedidosMultizona: PedidosMultizona;
 }
 
 function apiUrl(path: string): string {
