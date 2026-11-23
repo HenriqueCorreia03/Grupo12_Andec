@@ -17,10 +17,10 @@ export default function QualidadePage({ searchParams }: PageProps<"/qualidade">)
   return (
     <ViewTransition enter="troca" exit="troca" default="none">
     <section>
-      <h1 className="text-2xl font-semibold">Qualidade dos dados e limitações</h1>
+      <h1 className="text-2xl font-semibold">Qualidade dos dados</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Até que ponto se pode confiar nos números: o que falta, o que foi excluído e porquê, sobre todo o histórico.
-        Os números principais primeiro e o detalhe por baixo.
+        Podemos confiar nos números? Primeiro a resposta; depois o que falta, o que fizemos aos dados e o que eles não
+        dizem.
       </p>
       <Suspense fallback={<div className="mt-6 h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
         <ConteudoQualidade searchParams={searchParams} />
@@ -49,6 +49,11 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
   const pct = (valor: number | null) => formatarPercentagemOuNulo(valor) ?? "sem dados";
   const rc01 = naoMapeadas.localizacoes.find((l) => l.localizacao === "RC-01");
 
+  // Percentagens das três verificações do topo (complementos dos valores da API, só para mostrar a parte "boa").
+  const ligadas = c.linhasCO === 0 ? null : ((c.linhasCO - c.linhasSemCorrespondencia) * 100) / c.linhasCO;
+  const recolhidas = r.encomendado === 0 ? null : (r.recolhido * 100) / r.encomendado;
+  const noMapa = naoMapeadas.percentagemRecolhido === null ? null : 100 - naoMapeadas.percentagemRecolhido;
+
   return (
     <>
       {q.filtrosNaoAplicaveis.length > 0 && (
@@ -58,207 +63,187 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
         </p>
       )}
 
-      <div className="mt-6">
-        <FaixaKpi rotulo="Números principais da qualidade dos dados">
-          <CartaoResumo
-            titulo="Encomendado que não foi recolhido"
-            valor={formatarNumero(r.diferenca)}
-            unidade="un."
-            grafico={
-              <BarraParteTodo
-                parte={r.recolhido}
-                todo={r.encomendado}
-                classe="bg-[#2a78d6]"
-                titulo={`${formatarNumero(r.encomendado)} unidades encomendadas`}
-                rotuloParte="recolhidas"
-                rotuloResto="nunca recolhidas"
-              />
-            }
-          />
-          <CartaoResumo
-            titulo="Linhas de encomenda sem recolha correspondente"
-            valor={formatarPercentagemOuNulo(c.percentagemSemCorrespondencia)}
-            grafico={
-              <BarraParteTodo
-                parte={c.linhasCO - c.linhasSemCorrespondencia}
-                todo={c.linhasCO}
-                classe="bg-[#2a78d6]"
-                titulo={`${formatarNumero(c.linhasCO)} linhas de encomenda`}
-                rotuloParte="encontram a sua recolha"
-                rotuloResto="sem recolha correspondente"
-              />
-            }
-          />
-          <CartaoResumo
-            titulo="Recolhido em sítios fora do mapa"
-            valor={formatarPercentagemOuNulo(naoMapeadas.percentagemRecolhido)}
-            unidade="do recolhido"
-            grafico={
-              <BarraSegmentos
-                titulo={`${formatarNumero(r.recolhido)} unidades recolhidas`}
-                segmentos={[
-                  { valor: r.recolhido - naoMapeadas.unidades, rotulo: "em sítios que estão no mapa", classe: "bg-stone-300" },
-                  { valor: rc01?.unidades ?? 0, rotulo: "na área RC-01", classe: "bg-amber-500" },
-                  { valor: naoMapeadas.unidades - (rc01?.unidades ?? 0), rotulo: `noutros ${formatarNumero(Math.max(0, naoMapeadas.localizacoes.length - 1))} sítios fora do mapa`, classe: "bg-amber-300" },
-                ]}
-              />
-            }
-          />
-          <CartaoResumo
-            titulo="Linhas duplicadas (contam como reais)"
-            valor={formatarNumero(c.linhasDuplicadas)}
-            unidade="linhas"
-            grafico={
-              <BarraParteTodo
-                parte={c.linhasDuplicadas}
-                todo={c.linhasCO}
-                classe="bg-[#2a78d6]"
-                titulo={`${formatarNumero(c.linhasCO)} linhas de encomenda`}
-                rotuloParte="repetem outra linha"
-                rotuloResto="únicas"
-              />
-            }
-            leitura={`Têm ${formatarNumero(c.unidadesDuplicadas)} unidades e contam como encomendas reais.`}
-          />
-          <CartaoResumo
-            titulo="Ligações repartidas por várias zonas"
-            valor={formatarPercentagemOuNulo(ligacoesRepartidas.valor)}
-            grafico={
-              <BarraParteTodo
-                parte={ligacoesRepartidas.linhasRepartidas}
-                todo={ligacoesRepartidas.linhasLigadas}
-                classe="bg-[#2a78d6]"
-                titulo={`${formatarNumero(ligacoesRepartidas.linhasLigadas)} linhas de encomenda com recolha`}
-                rotuloParte="recolhidas em 2 ou mais zonas"
-                rotuloResto="recolhidas numa só zona"
-              />
-            }
-          />
-        </FaixaKpi>
-      </div>
+      {/* 1. A resposta: três verificações sobre todo o histórico. */}
+      <section className="mt-6" aria-labelledby="titulo-resposta">
+        <h2 id="titulo-resposta" className="text-lg font-semibold">
+          Na maior parte, sim.
+        </h2>
+        <p className="mt-1 text-sm text-stone-600">Três verificações, sobre todo o histórico:</p>
+        <div className="mt-3">
+          <FaixaKpi rotulo="Três verificações da qualidade dos dados">
+            <CartaoResumo
+              titulo="As encomendas ligam ao que foi recolhido"
+              valor={formatarPercentagemOuNulo(ligadas)}
+              unidade="das linhas"
+              grafico={
+                <BarraParteTodo
+                  parte={c.linhasCO - c.linhasSemCorrespondencia}
+                  todo={c.linhasCO}
+                  classe="bg-emerald-500"
+                  titulo={`${formatarNumero(c.linhasCO)} linhas de encomenda`}
+                  rotuloParte="encontram a sua recolha"
+                  rotuloResto="sem recolha correspondente"
+                />
+              }
+              leitura="É esta ligação que permite contar os pedidos divididos entre ondas."
+            />
+            <CartaoResumo
+              titulo="Quase tudo o que se encomendou foi recolhido"
+              valor={formatarPercentagemOuNulo(recolhidas)}
+              unidade="das unidades"
+              grafico={
+                <BarraParteTodo
+                  parte={r.recolhido}
+                  todo={r.encomendado}
+                  classe="bg-emerald-500"
+                  titulo={`${formatarNumero(r.encomendado)} unidades encomendadas`}
+                  rotuloParte="recolhidas"
+                  rotuloResto="nunca recolhidas"
+                />
+              }
+              leitura={`As ${formatarNumero(r.diferenca)} que faltam estão explicadas logo abaixo.`}
+            />
+            <CartaoResumo
+              titulo="Sabemos de onde sai quase tudo"
+              valor={formatarPercentagemOuNulo(noMapa)}
+              unidade="do recolhido"
+              grafico={
+                <BarraSegmentos
+                  titulo={`${formatarNumero(r.recolhido)} unidades recolhidas`}
+                  segmentos={[
+                    { valor: r.recolhido - naoMapeadas.unidades, rotulo: "em sítios que estão no mapa", classe: "bg-emerald-500" },
+                    { valor: rc01?.unidades ?? 0, rotulo: "na área RC-01 (fora do mapa)", classe: "bg-amber-500" },
+                    {
+                      valor: naoMapeadas.unidades - (rc01?.unidades ?? 0),
+                      rotulo: `noutros ${formatarNumero(Math.max(0, naoMapeadas.localizacoes.length - 1))} sítios fora do mapa`,
+                      classe: "bg-amber-300",
+                    },
+                  ]}
+                />
+              }
+              leitura="Fora do mapa não se vê quão espalhados estão os artigos."
+            />
+          </FaixaKpi>
+        </div>
+      </section>
 
-      <div className="mt-8">
-        <DecomposicaoDiferenca recolhido={r} />
-      </div>
+      {/* 2. O que falta, explicado. */}
+      <section className="mt-10" aria-labelledby="titulo-faltam">
+        <h2 id="titulo-faltam" className="text-lg font-semibold">
+          Porque faltam {formatarNumero(r.diferenca)} unidades?
+        </h2>
+        <p className="mt-1 text-sm text-stone-600">
+          São unidades encomendadas que nunca aparecem no registo de recolha. Explicamos cada parte, por esta ordem:
+        </p>
+        <div className="mt-3">
+          <DecomposicaoDiferenca recolhido={r} ondasSemRecolha={c.ondasSemPicking} />
+        </div>
+      </section>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Seccao titulo="Exclusões e contagens">
-          <Tabela
-            linhas={[
-              ["Linhas do Customer_Order", formatarNumero(c.linhasCO)],
-              ["Linhas duplicadas (contam como reais)", `${formatarNumero(c.linhasDuplicadas)} (${formatarNumero(c.unidadesDuplicadas)} un.)`],
-              ["Linhas com 0 un.", formatarNumero(c.linhasZero)],
-              ["Pedidos com 0 un. (excluídos dos pedidos)", formatarNumero(c.pedidosZero)],
-              ["Linhas com tamanho vazio", formatarNumero(c.linhasTamanhoVazio)],
-              ["Linhas com tamanho fora das escalas conhecidas", formatarNumero(c.linhasForaDasEscalas)],
-              [
-                "Linhas do CO sem correspondência no PW",
-                `${formatarNumero(c.linhasSemCorrespondencia)} (${pct(c.percentagemSemCorrespondencia)})`,
-              ],
-              ["Ondas sem picking", `${formatarNumero(c.ondasSemPicking)} (${formatarNumero(c.unidadesOndasSemPicking)} un.)`],
-            ]}
-          />
-        </Seccao>
+      {/* 3. As regras aplicadas aos dados. */}
+      <section className="mt-10" aria-labelledby="titulo-regras">
+        <h2 id="titulo-regras" className="text-lg font-semibold">
+          O que fizemos aos dados
+        </h2>
+        <p className="mt-1 text-sm text-stone-600">
+          Regras aplicadas antes de calcular qualquer indicador. Os ficheiros originais nunca são alterados.
+        </p>
+        <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Seccao titulo="Regras de limpeza">
+            <Tabela
+              linhas={[
+                [
+                  "Linhas de encomenda iguais a outra",
+                  `${formatarNumero(c.linhasDuplicadas)} (${formatarNumero(c.unidadesDuplicadas)} un.): contam como reais`,
+                ],
+                ["Linhas com 0 unidades", `${formatarNumero(c.linhasZero)}: ficam de fora`],
+                ["Pedidos sem nenhuma unidade", `${formatarNumero(c.pedidosZero)}: ficam de fora`],
+                ["Linhas sem tamanho", `${formatarNumero(c.linhasTamanhoVazio)}: contam, sem tamanho`],
+                [
+                  "Tamanhos entre 215 e 305 (outra escala)",
+                  `${formatarNumero(escalaPorConfirmar.linhasCO)} linhas de encomenda e ${formatarNumero(escalaPorConfirmar.linhasPW)} recolhas: ficam como estão`,
+                ],
+                [
+                  "Linhas recolhidas em 2 ou mais zonas",
+                  `${formatarNumero(ligacoesRepartidas.linhasRepartidas)} (${pct(ligacoesRepartidas.valor)}): as unidades repartem-se pelas zonas`,
+                ],
+              ]}
+            />
+          </Seccao>
 
-        <Seccao titulo="Recolhido vs encomendado">
-          <p className="text-sm text-stone-700">
-            Encomendado {formatarNumero(r.encomendado)} un. − recolhido {formatarNumero(r.recolhido)} un. ={" "}
-            <strong>{formatarNumero(r.diferenca)} un.</strong>, decompostas por esta ordem:
-          </p>
-          <Tabela
-            linhas={[
-              ["1. Unidades em ondas sem picking", formatarNumero(r.ondasSemPicking)],
-              [
-                `2. Referências nunca recolhidas (${formatarNumero(r.nReferenciasNuncaRecolhidas)}), em ondas com picking`,
-                formatarNumero(r.referenciasNuncaRecolhidas),
-              ],
-              ["3. Sem causa conhecida", formatarNumero(r.semCausaConhecida)],
-            ]}
-          />
-          <p className="mt-2 text-xs text-stone-500">
-            {formatarNumero(r.diferenca)} = {formatarNumero(r.ondasSemPicking)} + {formatarNumero(r.referenciasNuncaRecolhidas)} +{" "}
-            {formatarNumero(r.semCausaConhecida)}
-          </p>
-        </Seccao>
+          <Seccao titulo="Sítios fora do mapa">
+            <p className="text-sm text-stone-700">
+              {formatarNumero(naoMapeadas.unidades)} unidades saíram de {formatarNumero(naoMapeadas.localizacoes.length)}{" "}
+              sítios que não estão no mapa do armazém; {formatarNumero(rc01?.unidades ?? 0)} delas da área RC-01. Contam
+              para os totais, mas não para a análise por zona.
+            </p>
+            {naoMapeadas.localizacoes.length > 0 && (
+              <VerDetalhe
+                titulo={`lista dos ${formatarNumero(naoMapeadas.localizacoes.length)} sítios (RC-01 primeiro)`}
+                className="mt-3"
+              >
+                <TabelaRecolhida
+                  semLimite
+                  classeCabecalho="text-left text-stone-500"
+                  cabecalho={
+                    <tr>
+                      <th className="px-4 py-1 font-normal">Localização</th>
+                      <th className="px-4 py-1 text-right font-normal">Unidades</th>
+                      <th className="px-4 py-1 text-right font-normal">Artigos</th>
+                    </tr>
+                  }
+                  linhas={naoMapeadas.localizacoes.map((l) => (
+                    <tr
+                      key={l.localizacao}
+                      className={`border-t border-stone-100 ${l.localizacao === "RC-01" ? "font-semibold" : ""}`}
+                    >
+                      <td className="px-4 py-0.5">{l.localizacao}</td>
+                      <td className="px-4 py-0.5 text-right">{formatarNumero(l.unidades)}</td>
+                      <td className="px-4 py-0.5 text-right">{formatarNumero(l.referencias)}</td>
+                    </tr>
+                  ))}
+                />
+              </VerDetalhe>
+            )}
+          </Seccao>
 
-        <Seccao titulo="Localizações não mapeadas">
-          <p className="text-sm text-stone-700">
-            {formatarNumero(naoMapeadas.unidades)} un. recolhidas em {formatarNumero(naoMapeadas.localizacoes.length)}{" "}
-            localizações que não existem no Storage_Location ({pct(naoMapeadas.percentagemRecolhido)} do recolhido).
-          </p>
-          {naoMapeadas.localizacoes.length > 0 && (
-            <VerDetalhe
-              titulo={`lista das ${formatarNumero(naoMapeadas.localizacoes.length)} localizações (RC-01 primeiro)`}
-              className="mt-3"
-            >
-              <TabelaRecolhida
-                semLimite
-                classeCabecalho="text-left text-stone-500"
-                cabecalho={
-                  <tr>
-                    <th className="px-4 py-1 font-normal">Localização</th>
-                    <th className="px-4 py-1 text-right font-normal">Unidades</th>
-                    <th className="px-4 py-1 text-right font-normal">Referências</th>
-                  </tr>
-                }
-                linhas={naoMapeadas.localizacoes.map((l) => (
-                  <tr
-                    key={l.localizacao}
-                    className={`border-t border-stone-100 ${l.localizacao === "RC-01" ? "font-semibold" : ""}`}
-                  >
-                    <td className="px-4 py-0.5">{l.localizacao}</td>
-                    <td className="px-4 py-0.5 text-right">{formatarNumero(l.unidades)}</td>
-                    <td className="px-4 py-0.5 text-right">{formatarNumero(l.referencias)}</td>
-                  </tr>
+          <Suspense fallback={<div className="h-48 animate-pulse rounded-lg border border-stone-200 bg-white lg:col-span-2" />}>
+            <SensibilidadeDuplicados semDuplicados={semDuplicados} filtros={filtros} />
+          </Suspense>
+        </div>
+      </section>
+
+      {/* 4. O que não sabemos. */}
+      <section className="mt-10" aria-labelledby="titulo-nao-sabemos">
+        <h2 id="titulo-nao-sabemos" className="text-lg font-semibold">
+          O que os dados não dizem
+        </h2>
+        <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Seccao titulo="Dúvidas a confirmar com quem conhece o armazém">
+            <p className="mb-2 text-sm text-stone-600">
+              Não inventámos respostas: até lá, os números tratam estes casos como estão nos ficheiros.
+            </p>
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-stone-700">
+              {q.perguntasAoDocente.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ol>
+          </Seccao>
+
+          <Seccao titulo="Limitações conhecidas">
+            <p className="text-sm text-stone-600">
+              O que os dados não permitem medir ou só permitem medir em parte. Estão todas tidas em conta nos números.
+            </p>
+            <VerDetalhe titulo={`as ${formatarNumero(q.limitacoes.length)} limitações`} className="mt-3">
+              <ol className="list-decimal space-y-1 py-3 pl-9 pr-4 text-sm text-stone-700">
+                {q.limitacoes.map((l) => (
+                  <li key={l}>{l}</li>
                 ))}
-              />
+              </ol>
             </VerDetalhe>
-          )}
-        </Seccao>
-
-        <Seccao titulo="Ligação CO ↔ PW e tamanhos">
-          <Tabela
-            linhas={[
-              [
-                "Ligações repartidas por várias zonas",
-                `${pct(ligacoesRepartidas.valor)} (${formatarNumero(ligacoesRepartidas.linhasRepartidas)} de ${formatarNumero(ligacoesRepartidas.linhasLigadas)} linhas ligadas)`,
-              ],
-              [
-                "Escala de tamanhos 215–305",
-                `${formatarNumero(escalaPorConfirmar.linhasCO)} linhas no CO; ${formatarNumero(escalaPorConfirmar.linhasPW)} no PW (${escalaPorConfirmar.estado})`,
-              ],
-            ]}
-          />
-          <p className="mt-2 text-xs text-stone-500">
-            Uma ligação repartida é uma linha do CO cujas unidades recolhidas ficam em 2 ou mais zonas mapeadas; &quot;não
-            mapeada&quot; não conta como zona.
-          </p>
-        </Seccao>
-
-        <Suspense fallback={<div className="h-48 animate-pulse rounded-lg border border-stone-200 bg-white lg:col-span-2" />}>
-          <SensibilidadeDuplicados semDuplicados={semDuplicados} filtros={filtros} />
-        </Suspense>
-
-        <Seccao titulo="Limitações conhecidas">
-          <ol className="list-decimal space-y-1 pl-5 text-sm text-stone-700">
-            {q.limitacoes.map((l) => (
-              <li key={l}>{l}</li>
-            ))}
-          </ol>
-        </Seccao>
-
-        <Seccao titulo="O que os dados não explicam">
-          <p className="mb-2 text-sm text-stone-600">
-            Dúvidas a confirmar com quem conhece o armazém. Não inventámos respostas: até lá, os números tratam estes casos
-            como estão nos ficheiros.
-          </p>
-          <ol className="list-decimal space-y-1 pl-5 text-sm text-stone-700">
-            {q.perguntasAoDocente.map((p) => (
-              <li key={p}>{p}</li>
-            ))}
-          </ol>
-        </Seccao>
-      </div>
+          </Seccao>
+        </div>
+      </section>
     </>
   );
 }
@@ -307,8 +292,8 @@ async function SensibilidadeDuplicados({ semDuplicados, filtros }: { semDuplicad
       </div>
       <p className="mt-2 text-sm text-stone-700">
         {semDuplicados
-          ? "Sem as linhas do Customer_Order idênticas a outra. Só esta secção muda: o resto da aplicação usa sempre a regra principal, com duplicados."
-          : "As linhas idênticas do Customer_Order contam como reais. É a regra usada em toda a aplicação."}
+          ? "Sem as linhas de encomenda iguais a outra. Só esta secção muda: o resto do dashboard usa sempre a regra principal, com as repetidas."
+          : "As linhas de encomenda iguais a outra contam como encomendas reais. É a regra usada em todo o dashboard. Mude para ver se as conclusões dependem dela."}
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-[1fr_2fr]">
@@ -321,7 +306,7 @@ async function SensibilidadeDuplicados({ semDuplicados, filtros }: { semDuplicad
           </p>
         </div>
         <table className="w-full text-sm">
-          <caption className="text-left text-xs text-stone-500">Classificação ABC (dataset completo)</caption>
+          <caption className="text-left text-xs text-stone-500">Classificação ABC (todo o histórico)</caption>
           <thead>
             <tr className="text-left text-stone-500">
               <th className="py-1 font-normal">Classe</th>
@@ -383,21 +368,37 @@ function Tabela({ linhas }: { linhas: [string, string][] }) {
  * Resumo visual da página: a diferença entre encomendado e recolhido, numa barra com as três parcelas pela ordem da
  * decomposição. As parcelas vêm da API; aqui só se calcula a largura de cada uma.
  */
-function DecomposicaoDiferenca({ recolhido: r }: { recolhido: Qualidade["recolhidoVsEncomendado"] }) {
+function DecomposicaoDiferenca({
+  recolhido: r,
+  ondasSemRecolha,
+}: {
+  recolhido: Qualidade["recolhidoVsEncomendado"];
+  ondasSemRecolha: number;
+}) {
   const parcelas = [
-    { rotulo: "Ondas sem picking", unidades: r.ondasSemPicking, cor: "bg-stone-700" },
     {
-      rotulo: `Referências nunca recolhidas (${formatarNumero(r.nReferenciasNuncaRecolhidas)})`,
+      rotulo: "Ondas sem registo de recolha",
+      explicacao: `Estão em ${formatarNumero(ondasSemRecolha)} ondas que aparecem nas encomendas mas não têm nenhuma recolha registada.`,
+      unidades: r.ondasSemPicking,
+      cor: "bg-stone-700",
+    },
+    {
+      rotulo: "Artigos nunca recolhidos",
+      explicacao: `São de ${formatarNumero(r.nReferenciasNuncaRecolhidas)} artigos encomendados que nunca aparecem no registo de recolha.`,
       unidades: r.referenciasNuncaRecolhidas,
       cor: "bg-stone-400",
     },
-    { rotulo: "Sem causa conhecida", unidades: r.semCausaConhecida, cor: "bg-amber-400" },
+    {
+      rotulo: "Sem explicação nos dados",
+      explicacao: "Recolheu-se menos do que se encomendou e os ficheiros não dizem porquê.",
+      unidades: r.semCausaConhecida,
+      cor: "bg-amber-400",
+    },
   ];
   return (
     <figure className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-      <figcaption className="text-sm font-medium text-stone-500">
-        Encomendado que não foi recolhido: {formatarNumero(r.diferenca)} un. ={" "}
-        {parcelas.map((p) => formatarNumero(p.unidades)).join(" + ")}
+      <figcaption className="text-sm text-stone-600">
+        {formatarNumero(r.diferenca)} unidades = {parcelas.map((p) => formatarNumero(p.unidades)).join(" + ")}
       </figcaption>
       {r.diferenca > 0 ? (
         <div className="mt-3 flex h-6 overflow-hidden rounded" aria-hidden="true">
@@ -408,11 +409,17 @@ function DecomposicaoDiferenca({ recolhido: r }: { recolhido: Qualidade["recolhi
       ) : (
         <p className="mt-2 text-sm text-stone-500">sem diferença</p>
       )}
-      <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+      <ul className="mt-4 grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
         {parcelas.map((p) => (
-          <li key={p.rotulo} className="flex items-center gap-2">
-            <span className={`inline-block h-3 w-3 rounded-sm ${p.cor}`} />
-            {p.rotulo}: <span className="font-medium">{formatarNumero(p.unidades)} un.</span>
+          <li key={p.rotulo}>
+            <p className="flex items-center gap-2 font-medium text-stone-900">
+              <span className={`inline-block h-3 w-3 shrink-0 rounded-sm ${p.cor}`} />
+              {p.rotulo}
+            </p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">
+              {formatarNumero(p.unidades)} <span className="text-sm font-normal text-stone-500">un.</span>
+            </p>
+            <p className="mt-1 text-stone-600">{p.explicacao}</p>
           </li>
         ))}
       </ul>
