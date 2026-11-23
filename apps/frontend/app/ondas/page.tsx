@@ -5,6 +5,7 @@ import { obterOndasEPedidos, type OndasEPedidos } from "@/lib/api";
 import { filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
 import { DetalheDaOnda } from "./detalhe-onda";
+import { PeriodosDaAlavancaB } from "./periodos";
 import { PickingOndas } from "./picking-ondas";
 
 export default function OndasPage({ searchParams }: PageProps<"/ondas">) {
@@ -34,6 +35,7 @@ async function IndicadoresDasOndas({ searchParams }: { searchParams: PageProps<"
       )}
       <PedidosDivididosCartao filtros={filtros} />
       <PickingOndas filtros={filtros} />
+      {filtros.onda === undefined && <PeriodosDaAlavancaB filtros={filtros} />}
     </>
   );
 }

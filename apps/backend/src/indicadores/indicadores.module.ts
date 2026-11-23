@@ -8,6 +8,8 @@ import { IndicadoresService } from './indicadores.service';
 import { MatrizService } from './matriz.service';
 import { OndasEPedidosController } from './ondas-e-pedidos.controller';
 import { PedidosDivididosService } from './pedidos-divididos.service';
+import { PeriodosController } from './periodos.controller';
+import { PeriodosService } from './periodos.service';
 import { PickingController } from './picking.controller';
 import { PickingService } from './picking.service';
 import { SerieMensalService } from './serie-mensal.service';
@@ -23,6 +25,7 @@ import { ZonasService } from './zonas.service';
     PickingController,
     ZonasController,
     DetalheOndaController,
+    PeriodosController,
   ],
   providers: [
     ComparacaoService,
@@ -34,6 +37,7 @@ import { ZonasService } from './zonas.service';
     ZonasService,
     DetalheOndaService,
     SerieMensalService,
+    PeriodosService,
   ],
 })
 export class IndicadoresModule {}
