@@ -444,3 +444,19 @@ export function obterDividosPorPeriodo(filtros: FiltrosUrl = {}): Promise<Divido
 export function obterCarga(filtros: FiltrosUrl = {}): Promise<CargaPorPeriodo> {
   return obter(`/api/ondas-e-pedidos/carga${consulta(filtros)}`);
 }
+
+/** Contrato de GET /api/ondas-e-pedidos/ondas-incompletas (ticket 15, extra P6): uma observação medida, não uma simulação. */
+export interface OndasIncompletas extends MetadadosIndicador {
+  ondasDoPicking: number;
+  ondasIncompletas: number;
+  percentagemIncompletas: number | null;
+  ondasSimultaneas: number;
+  gruposDiaHora: number;
+  pedidosDivididosEnvolvidos: number;
+  rotulo: "observação, não ganho esperado";
+}
+
+/** Ondas com menos de 24 un. criadas no mesmo dia e hora que outras incompletas, e os pedidos divididos que envolvem. */
+export function obterOndasIncompletas(filtros: FiltrosUrl = {}): Promise<OndasIncompletas> {
+  return obter(`/api/ondas-e-pedidos/ondas-incompletas${consulta(filtros)}`);
+}
