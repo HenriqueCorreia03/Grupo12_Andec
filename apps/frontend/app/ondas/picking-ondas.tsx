@@ -117,20 +117,35 @@ function ListaDeOndas({ ondas: todasAsOndas, filtros, lista }: { ondas: OndaPick
   const hrefLista = (valor: "incompletas" | "todas") => `/ondas${consulta(filtros, { lista: valor === "todas" ? "todas" : null })}`;
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white shadow-sm sm:col-span-2 lg:col-span-3">
-      <table className="w-full min-w-[32rem] text-sm">
-        <caption className="px-4 py-3 text-left text-sm font-medium text-stone-500">
-          {lista === "incompletas" ? "Ondas incompletas (< 24 un.)" : "Todas as ondas"}: primeiras{" "}
-          {formatarNumero(Math.min(ONDAS_NA_LISTA, ondas.length))} de {formatarNumero(ondas.length)}. Clique numa onda para ver o
-          detalhe.{" "}
-          {lista === "incompletas" ? (
-            <Link href={hrefLista("todas")} className="underline underline-offset-2">
-              Ver todas ({formatarNumero(todasAsOndas.length)})
-            </Link>
-          ) : (
-            <Link href={hrefLista("incompletas")} className="underline underline-offset-2">
-              Ver só as incompletas ({formatarNumero(incompletas.length)})
-            </Link>
-          )}
+      <div className="px-4 pt-4">
+        <h3 className="text-sm font-semibold">Lista de ondas</h3>
+        <p className="mt-1 max-w-3xl text-sm text-stone-700">
+          Cada linha é uma onda de picking, um conjunto de pedidos recolhido de uma vez. Clique no número de uma onda para ver os seus
+          pedidos, as linhas e as localizações. Uma onda está <strong>incompleta</strong> quando recolhe menos de 24 unidades (a capacidade de referência).
+        </p>
+        <div role="group" aria-label="Que ondas mostrar" className="mt-3 inline-flex overflow-hidden rounded border border-stone-300 text-sm">
+          <Link
+            href={hrefLista("incompletas")}
+            aria-current={lista === "incompletas" ? "true" : undefined}
+            className={`px-3 py-1.5 ${lista === "incompletas" ? "bg-stone-900 text-white" : "bg-white hover:bg-stone-100"}`}
+          >
+            Só incompletas ({formatarNumero(incompletas.length)})
+          </Link>
+          <Link
+            href={hrefLista("todas")}
+            aria-current={lista === "todas" ? "true" : undefined}
+            className={`border-l border-stone-300 px-3 py-1.5 ${lista === "todas" ? "bg-stone-900 text-white" : "bg-white hover:bg-stone-100"}`}
+          >
+            Todas ({formatarNumero(todasAsOndas.length)})
+          </Link>
+        </div>
+        <p className="mt-2 text-xs text-stone-600">
+          A mostrar as primeiras {formatarNumero(Math.min(ONDAS_NA_LISTA, ondas.length))} de {formatarNumero(ondas.length)}, por ordem de data.
+        </p>
+      </div>
+      <table className="mt-3 w-full min-w-[32rem] text-sm">
+        <caption className="sr-only">
+          {lista === "incompletas" ? "Ondas incompletas" : "Todas as ondas"}, primeiras {Math.min(ONDAS_NA_LISTA, ondas.length)} por ordem de data
         </caption>
         <thead className="border-y border-stone-200 bg-stone-50 text-left text-stone-500">
           <tr>
