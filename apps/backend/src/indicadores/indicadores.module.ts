@@ -4,6 +4,7 @@ import { ArtigosController } from './artigos.controller';
 import { ComparacaoService } from './comparacao.service';
 import { DetalheOndaController } from './detalhe-onda.controller';
 import { DetalheOndaService } from './detalhe-onda.service';
+import { EstabilidadeService } from './estabilidade.service';
 import { IndicadoresService } from './indicadores.service';
 import { MatrizService } from './matriz.service';
 import { OndasEPedidosController } from './ondas-e-pedidos.controller';
@@ -14,6 +15,7 @@ import { PeriodosController } from './periodos.controller';
 import { PeriodosService } from './periodos.service';
 import { PickingController } from './picking.controller';
 import { PickingService } from './picking.service';
+import { PrioridadeService } from './prioridade.service';
 import { SerieMensalService } from './serie-mensal.service';
 import { VisaoGeralController } from './visao-geral.controller';
 import { ZonasController } from './zonas.controller';
@@ -40,6 +42,8 @@ import { ZonasService } from './zonas.service';
     ZonasService,
     DetalheOndaService,
     SerieMensalService,
+    PrioridadeService,
+    EstabilidadeService,
     PeriodosService,
     OndasIncompletasService,
   ],

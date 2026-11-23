@@ -389,6 +389,51 @@ export function obterAbc(filtros: FiltrosUrl = {}): Promise<ReferenciasAbc> {
   return obter(`/api/artigos/abc${consulta(filtros)}`);
 }
 
+/** Contrato de GET /api/artigos/prioridade (ticket 10): ranking da alavanca (a) sobre o picking. */
+export interface PrioridadeDosArtigos extends MetadadosIndicador {
+  artigos: {
+    posicao: number;
+    referencia: string;
+    /** Classe ABC global; nula se a referência não tiver procura no Customer_Order. */
+    classe: ClasseAbc | null;
+    /** Pares distintos onda × localização. */
+    paragens: number;
+    localizacoesDistintas: number;
+    unidadesRecolhidas: number;
+    passaPeloRc01: boolean;
+  }[];
+  resumoA: {
+    artigosA: number;
+    artigosAComPicking: number;
+    localizacoes: { media: number | null; mediana: number | null; minimo: number | null; maximo: number | null };
+  };
+  limitacao: string;
+}
+
+export function obterPrioridade(filtros: FiltrosUrl = {}): Promise<PrioridadeDosArtigos> {
+  return obter(`/api/artigos/prioridade${consulta(filtros)}`);
+}
+
+/** Contrato de GET /api/artigos/estabilidade (ticket 10): ABC mensal com o limiar de unidades. */
+export interface EstabilidadeAbc extends MetadadosIndicador {
+  limiarUnidades: number;
+  meses: string[];
+  transicoes: { de: string; para: string; comparadas: number; mudaram: number; percentagem: number | null }[];
+  valor: number | null;
+  comparadas: number;
+  mudaram: number;
+  combinacoes: { comUnidades: number; excluidas: number; percentagemExcluidas: number | null };
+  referencias: {
+    referencia: string;
+    classeGlobal: ClasseAbc;
+    meses: { mes: string; classe: ClasseAbc | null; unidades: number; excluida: boolean }[];
+  }[];
+}
+
+export function obterEstabilidade(filtros: FiltrosUrl = {}): Promise<EstabilidadeAbc> {
+  return obter(`/api/artigos/estabilidade${consulta(filtros)}`);
+}
+
 /** Unidades por tamanho normalizado de uma referência no período; nulo se a referência não tiver procura. */
 export function obterTamanhos(referencia: string, filtros: FiltrosUrl = {}): Promise<TamanhosReferencia | null> {
   return obter(
