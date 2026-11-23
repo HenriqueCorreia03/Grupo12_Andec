@@ -10,8 +10,9 @@ const BACKEND_DIR = resolve(__dirname, '../..');
  */
 export function runEtlCommand(env: { DATABASE_URL: string; DATA_DIR: string }): Promise<string> {
   return new Promise((resolvePromise, reject) => {
-    // shell: true para o Windows encontrar o npm.cmd; os argumentos são fixos.
-    const child = spawn('npm', ['run', 'etl'], {
+    // shell: true para o Windows encontrar o npm.cmd. O comando vai numa só string (fixa): passar argumentos
+    // à parte com shell: true está obsoleto no Node 24 (DEP0190).
+    const child = spawn('npm run etl', {
       cwd: BACKEND_DIR,
       env: { ...process.env, ...env },
       shell: true,

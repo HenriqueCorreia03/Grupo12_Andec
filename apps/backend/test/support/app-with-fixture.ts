@@ -25,6 +25,8 @@ export async function startAppWithFixture(files: FixtureFiles): Promise<AppWithF
   const dataDir = await writeFixture(files);
   await runEtlCommand({ DATABASE_URL: databaseUrl, DATA_DIR: dataDir });
 
+  // A aplicação lê DATABASE_URL; repõe-se no close(), para outro bloco do mesmo ficheiro poder arrancar.
+  const databaseUrlAnterior = process.env.DATABASE_URL;
   process.env.DATABASE_URL = databaseUrl;
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication<INestApplication<App>>();
@@ -38,6 +40,7 @@ export async function startAppWithFixture(files: FixtureFiles): Promise<AppWithF
     close: async () => {
       await app.close();
       await removeFixture(dataDir);
+      process.env.DATABASE_URL = databaseUrlAnterior;
     },
   };
 }

@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
 import { customerOrder, esforcoMatriz, pickingWave, storageLocation } from '../db/schema';
 import { abcGlobal } from './abc';
+import { paragensPorReferenciaELocalizacao } from './paragens';
 // A matriz compara as alavancas no dataset completo: qualquer filtro ativo é "não aplicável".
 import { type Filtros, filtrosAtivos, SEM_FILTROS } from './filtros';
 
@@ -241,14 +242,8 @@ export class MatrizService {
     }>(sql`
       with abc as (${abcGlobal()}),
       por_localizacao as (
-        select
-          ${pickingWave.reference} as referencia,
-          ${pickingWave.location} as localizacao,
-          count(distinct ${pickingWave.waveNumber}) as paragens,
-          sum(${pickingWave.quantity}) as unidades
-        from ${pickingWave}
-        where ${pickingWave.reference} in (select referencia from abc where classe = 'A')
-        group by ${pickingWave.reference}, ${pickingWave.location}
+        select * from (${paragensPorReferenciaELocalizacao()}) as p
+        where p.referencia in (select referencia from abc where classe = 'A')
       ),
       ranking as (
         select

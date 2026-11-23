@@ -47,12 +47,13 @@ export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
 
 async function Matriz({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
   const filtros = filtrosDeObjeto(await searchParams);
+  let matriz: VisaoGeral["matriz"];
   try {
-    const { matriz } = await obterVisaoGeral(filtros);
-    return <MatrizAlavancasView matriz={matriz} />;
+    ({ matriz } = await obterVisaoGeral(filtros));
   } catch (e) {
     return <ErroApi mensagem={(e as Error).message} />;
   }
+  return <MatrizAlavancasView matriz={matriz} />;
 }
 
 async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {

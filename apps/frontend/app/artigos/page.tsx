@@ -4,6 +4,8 @@ import { ErroApi } from "@/components/erro-api";
 import { obterAbc, obterTamanhos, type ReferenciasAbc } from "@/lib/api";
 import { consulta, filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
+import { EstabilidadeDoAbc } from "./estabilidade";
+import { PrioridadeArtigos } from "./prioridade";
 import { ParticipacaoZonas } from "./zonas";
 
 const CARREGAR = <div className="mt-6 h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />;
@@ -19,6 +21,18 @@ export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
       <Suspense fallback={CARREGAR}>
         <DrillDownAbc searchParams={searchParams} />
       </Suspense>
+      <h2 className="mt-10 text-lg font-semibold">Prioridade dos artigos e dispersão</h2>
+      <div className="mt-4">
+        <Suspense fallback={CARREGAR}>
+          <PrioridadeDoPeriodo searchParams={searchParams} />
+        </Suspense>
+      </div>
+      <h2 className="mt-10 text-lg font-semibold">Estabilidade do ABC mensal</h2>
+      <div className="mt-4">
+        <Suspense fallback={CARREGAR}>
+          <EstabilidadeDoPeriodo searchParams={searchParams} />
+        </Suspense>
+      </div>
       <h2 className="mt-10 text-lg font-semibold">Zonas e localizações não mapeadas</h2>
       <div className="mt-4">
         <Suspense fallback={<div className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
@@ -27,6 +41,14 @@ export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
       </div>
     </section>
   );
+}
+
+async function PrioridadeDoPeriodo({ searchParams }: { searchParams: PageProps<"/artigos">["searchParams"] }) {
+  return <PrioridadeArtigos filtros={filtrosDeObjeto(await searchParams)} />;
+}
+
+async function EstabilidadeDoPeriodo({ searchParams }: { searchParams: PageProps<"/artigos">["searchParams"] }) {
+  return <EstabilidadeDoAbc filtros={filtrosDeObjeto(await searchParams)} />;
 }
 
 async function ZonasDoPeriodo({ searchParams }: { searchParams: PageProps<"/artigos">["searchParams"] }) {
