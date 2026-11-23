@@ -293,6 +293,25 @@ export function obterVisaoGeral(filtros: FiltrosUrl = {}): Promise<VisaoGeral> {
 }
 
 /** Série mensal por dia com atividade (todos os filtros, incluindo o período). */
+/** Tamanho médio e ABC de uma das duas regras de duplicados (ticket 17). */
+export interface LadoSensibilidade {
+  tamanhoMedioEncomenda: TamanhoMedioEncomenda;
+  abc: ResumoAbc;
+}
+
+/**
+ * Sensibilidade aos duplicados (ticket 17): o tamanho médio e o ABC do dataset completo com as linhas duplicadas
+ * do CO (regra principal) e sem elas. Os filtros globais não se aplicam (como no resto da página de qualidade).
+ */
+export async function obterSensibilidadeDuplicados(): Promise<{ com: LadoSensibilidade; sem: LadoSensibilidade }> {
+  const [com, sem] = await Promise.all([
+    obterVisaoGeral(),
+    obter<VisaoGeral>(`/api/visao-geral${consulta({}, { duplicados: "sem" })}`),
+  ]);
+  const lado = (v: VisaoGeral) => ({ tamanhoMedioEncomenda: v.tamanhoMedioEncomenda, abc: v.abc });
+  return { com: lado(com), sem: lado(sem) };
+}
+
 export function obterSerieMensal(filtros: FiltrosUrl = {}): Promise<SerieMensal> {
   return obter(`/api/visao-geral/serie-mensal${consulta(filtros)}`);
 }

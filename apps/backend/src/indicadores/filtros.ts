@@ -33,6 +33,11 @@ export interface Filtros {
   onda: string | null;
   /** Pedido: só existe no CO; nos indicadores de picking é "não aplicável" (o PW não tem número de pedido). */
   pedido: string | null;
+  /**
+   * Sensibilidade aos duplicados (ticket 17): `com` (regra principal: as linhas idênticas do CO contam como reais)
+   * ou `sem` (retira as linhas marcadas como duplicadas no ETL). Só mexe no CO; o picking não tem duplicados.
+   */
+  duplicados: 'com' | 'sem';
 }
 
 export const SEM_FILTROS: Filtros = {
@@ -44,6 +49,7 @@ export const SEM_FILTROS: Filtros = {
   zona: null,
   onda: null,
   pedido: null,
+  duplicados: 'com',
 };
 
 /** Os filtros que cada origem de dados não consegue aplicar (a API devolve-os junto de cada indicador). */
@@ -67,6 +73,7 @@ export function filtrosAtivos(filtros: Filtros): string[] {
     ['zona', filtros.zona !== null],
     ['onda', filtros.onda !== null],
     ['pedido', filtros.pedido !== null],
+    ['sem duplicados', filtros.duplicados === 'sem'],
   ];
   return ativos.filter(([, ativo]) => ativo).map(([nome]) => nome);
 }
@@ -75,7 +82,7 @@ export function filtrosAtivos(filtros: Filtros): string[] {
  * Lê e valida os parâmetros de filtro da query string; qualquer erro é um 400 com mensagem clara.
  * - `inicio` e `fim` (aaaa-mm-dd) vêm sempre juntos; sem nenhum, é todo o histórico.
  * - `mes=aaaa-mm` equivale a `inicio` e `fim` desse mês e não se combina com eles.
- * - `classe` é A, B ou C. Parâmetros desconhecidos são ignorados.
+ * - `classe` é A, B ou C. `duplicados` é com (omissão) ou sem. Parâmetros desconhecidos são ignorados.
  */
 export function lerFiltros(query: Record<string, unknown>): Filtros {
   const inicio = texto(query, 'inicio');
@@ -87,11 +94,15 @@ export function lerFiltros(query: Record<string, unknown>): Filtros {
   const zona = listaDeZonas(texto(query, 'zona'));
   const onda = texto(query, 'onda');
   const pedido = texto(query, 'pedido');
+  const duplicados = texto(query, 'duplicados') ?? 'com';
 
   if (classe !== null && !(CLASSES_ABC as string[]).includes(classe)) {
     throw new BadRequestException(`Classe ABC inválida "${classe}" (use A, B ou C).`);
   }
-  const outros = { referencia, classe: classe as ClasseAbc | null, operador, zona, onda, pedido };
+  if (duplicados !== 'com' && duplicados !== 'sem') {
+    throw new BadRequestException(`Valor inválido para duplicados "${duplicados}" (use com ou sem).`);
+  }
+  const outros = { referencia, classe: classe as ClasseAbc | null, operador, zona, onda, pedido, duplicados: duplicados as 'com' | 'sem' };
 
   if (mes !== null) {
     if (inicio !== null || fim !== null) {
@@ -221,6 +232,7 @@ function condicoesCO(filtros: Filtros, alias: SQL): SQL {
   if (filtros.classe !== null) condicoes.push(sql`${alias}.reference in (${referenciasDaClasse(filtros.classe)})`);
   if (filtros.onda !== null) condicoes.push(sql`${alias}.wave_number = ${filtros.onda}`);
   if (filtros.pedido !== null) condicoes.push(sql`${alias}.order_number = ${filtros.pedido}`);
+  if (filtros.duplicados === 'sem') condicoes.push(sql`not ${alias}.is_duplicate`);
   return condicoes.length === 0 ? sql`true` : sql.join(condicoes, sql` and `);
 }
 
