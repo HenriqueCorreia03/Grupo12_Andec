@@ -114,6 +114,8 @@ function NotaGrande({
 }) {
   const cor = COR_DO_ESTADO[nota === null ? "semDados" : estadoDaNota(criterio, nota)];
   const palavra = nota === null ? null : palavraDaNota(criterio, nota);
+  // No esforço, o valor já é a palavra ("alto", "médio", "baixo"): não se repete.
+  const mostrarPalavra = palavra !== null && criterio !== "esforco";
   return (
     <div className={`rounded border px-2 py-1.5 ${cor.fundo}`}>
       <dt className="text-xs text-stone-600">{rotulo}</dt>
@@ -121,7 +123,7 @@ function NotaGrande({
         <span className={`block text-4xl font-semibold leading-none ${cor.texto}`}>{nota ?? "—"}</span>
         <span className="mt-1 block text-xs text-stone-700">
           {detalhe}
-          {palavra && <span className="text-stone-500"> · {palavra}</span>}
+          {mostrarPalavra && <span className="text-stone-500"> · {palavra}</span>}
         </span>
       </dd>
     </div>
