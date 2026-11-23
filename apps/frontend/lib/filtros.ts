@@ -54,20 +54,31 @@ export function soPeriodo(filtros: FiltrosUrl): FiltrosUrl {
   return periodo;
 }
 
-/** Descrição de cada filtro ativo, para o painel o mostrar sempre. */
-export function descreverFiltros(filtros: FiltrosUrl): string[] {
-  const descricoes: string[] = [];
-  if (filtros.mes) descricoes.push(`Mês ${filtros.mes}`);
-  else if (filtros.inicio && filtros.fim) descricoes.push(`Período ${filtros.inicio} a ${filtros.fim}`);
-  else if (filtros.inicio || filtros.fim) descricoes.push(`Período ${filtros.inicio ?? "…"} a ${filtros.fim ?? "…"}`);
-  if (filtros.referencia) descricoes.push(`Referência ${filtros.referencia}`);
-  if (filtros.classe) descricoes.push(`Classe ${filtros.classe} (global)`);
+/** Um filtro ativo: o texto que o painel mostra e os parâmetros do URL a tirar para o retirar. */
+export interface FiltroAtivo {
+  descricao: string;
+  chaves: ChaveFiltro[];
+}
+
+/** Os filtros ativos, pela ordem do painel, cada um com os parâmetros que o compõem (o período pode ser mês ou início/fim). */
+export function filtrosAtivosDoUrl(filtros: FiltrosUrl): FiltroAtivo[] {
+  const ativos: FiltroAtivo[] = [];
+  if (filtros.mes) ativos.push({ descricao: `Mês ${filtros.mes}`, chaves: ["mes"] });
+  else if (filtros.inicio || filtros.fim)
+    ativos.push({ descricao: `Período ${filtros.inicio ?? "…"} a ${filtros.fim ?? "…"}`, chaves: ["inicio", "fim"] });
+  if (filtros.referencia) ativos.push({ descricao: `Referência ${filtros.referencia}`, chaves: ["referencia"] });
+  if (filtros.classe) ativos.push({ descricao: `Classe ${filtros.classe} (global)`, chaves: ["classe"] });
   if (filtros.zona) {
     const zonas = filtros.zona.split(",");
-    descricoes.push(`${zonas.length > 1 ? "Zonas" : "Zona"} ${zonas.join(", ")}`);
+    ativos.push({ descricao: `${zonas.length > 1 ? "Zonas" : "Zona"} ${zonas.join(", ")}`, chaves: ["zona"] });
   }
-  if (filtros.operador) descricoes.push(`Operador ${filtros.operador}`);
-  if (filtros.onda) descricoes.push(`Onda ${filtros.onda}`);
-  if (filtros.pedido) descricoes.push(`Pedido ${filtros.pedido}`);
-  return descricoes;
+  if (filtros.operador) ativos.push({ descricao: `Operador ${filtros.operador}`, chaves: ["operador"] });
+  if (filtros.onda) ativos.push({ descricao: `Onda ${filtros.onda}`, chaves: ["onda"] });
+  if (filtros.pedido) ativos.push({ descricao: `Pedido ${filtros.pedido}`, chaves: ["pedido"] });
+  return ativos;
+}
+
+/** Descrição de cada filtro ativo, para o painel o mostrar sempre. */
+export function descreverFiltros(filtros: FiltrosUrl): string[] {
+  return filtrosAtivosDoUrl(filtros).map((f) => f.descricao);
 }

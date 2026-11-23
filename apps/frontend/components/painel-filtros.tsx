@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { CLASSES_ABC } from "@/lib/api";
-import { consulta, descreverFiltros, filtrosDoUrl, zonasDoFiltro, type FiltrosUrl } from "@/lib/filtros";
+import { consulta, descreverFiltros, filtrosAtivosDoUrl, filtrosDoUrl, zonasDoFiltro, type ChaveFiltro, type FiltrosUrl } from "@/lib/filtros";
 
 /** Zonas do armazém mapeadas no Storage_Location (A a R). */
 const ZONAS = "ABCDEFGHIJKLMNOPQR".split("");
@@ -34,6 +34,14 @@ function FormularioFiltros({ filtros }: { filtros: FiltrosUrl }) {
   const [pedido, setPedido] = useState(filtros.pedido ?? "");
   const [erro, setErro] = useState<string | null>(null);
   const ativos = descreverFiltros(filtros);
+  const ativosComChaves = filtrosAtivosDoUrl(filtros);
+
+  /** Retira um filtro (todos os parâmetros que o compõem) e mantém os outros. */
+  function retirar(chaves: ChaveFiltro[]) {
+    const novos: FiltrosUrl = { ...filtros };
+    for (const chave of chaves) delete novos[chave];
+    router.push(`${pathname}${consulta(novos)}`);
+  }
 
   function aplicar(evento: FormEvent) {
     evento.preventDefault();
@@ -91,10 +99,25 @@ function FormularioFiltros({ filtros }: { filtros: FiltrosUrl }) {
           {ativos.length === 0 ? (
             <span className="text-stone-600">nenhum (todo o histórico)</span>
           ) : (
-            ativos.map((descricao) => (
-              <span key={descricao} className="rounded-full bg-stone-900 px-2.5 py-0.5 text-xs text-white">
-                {descricao}
-              </span>
+            ativosComChaves.map((f) => (
+              // Cada filtro ativo retira-se aqui mesmo: o "×" aparece ao passar o rato (ou com o teclado) e, em ecrãs
+              // táteis, está sempre visível.
+              <button
+                key={f.descricao}
+                type="button"
+                onClick={() => retirar(f.chaves)}
+                title={`Retirar o filtro ${f.descricao}`}
+                aria-label={`Retirar o filtro ${f.descricao}`}
+                className="group inline-flex items-center gap-1 rounded-full bg-stone-900 py-0.5 pl-2.5 pr-1.5 text-xs text-white hover:bg-stone-700 focus-visible:bg-stone-700"
+              >
+                {f.descricao}
+                <span
+                  aria-hidden="true"
+                  className="flex h-4 w-4 items-center justify-center rounded-full text-sm leading-none opacity-0 transition-opacity group-hover:bg-white/20 group-hover:opacity-100 group-focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+                >
+                  ×
+                </span>
+              </button>
             ))
           )}
         </div>
