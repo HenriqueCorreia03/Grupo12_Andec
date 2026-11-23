@@ -247,7 +247,11 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
           </ol>
         </Seccao>
 
-        <Seccao titulo="Perguntas ao docente">
+        <Seccao titulo="O que os dados não explicam">
+          <p className="mb-2 text-sm text-stone-600">
+            Dúvidas a confirmar com quem conhece o armazém. Não inventámos respostas: até lá, os números tratam estes casos
+            como estão nos ficheiros.
+          </p>
           <ol className="list-decimal space-y-1 pl-5 text-sm text-stone-700">
             {q.perguntasAoDocente.map((p) => (
               <li key={p}>{p}</li>

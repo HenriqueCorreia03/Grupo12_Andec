@@ -104,10 +104,10 @@ export function OutrasDecisoes({
       unidadeDoDestaque: "",
       leitura:
         mes && dia && hora
-          ? `É onde há mais pedidos partidos: ${formatarNumero(mes.pedidosDivididos)} em ${MES_LONGO[Number(mes.mes.slice(5)) - 1]} (${formatarPercentagemOuNulo(mes.percentagem) ?? "sem dados"} dos pedidos do mês), ${formatarNumero(dia.pedidosDivididos)} às ${dia.nome.replace("-feira", "s-feiras")} e ${formatarNumero(hora.pedidosDivididos)} às ${hora.hora}h, a hora com mais trabalho.`
+          ? `É onde há mais pedidos divididos entre ondas: ${formatarNumero(mes.pedidosDivididos)} em ${MES_LONGO[Number(mes.mes.slice(5)) - 1]} (${formatarPercentagemOuNulo(mes.percentagem) ?? "sem dados"} dos pedidos do mês), ${formatarNumero(dia.pedidosDivididos)} às ${dia.nome.replace("-feira", "s-feiras")} e ${formatarNumero(hora.pedidosDivididos)} às ${hora.hora}h, a hora com mais trabalho.`
           : "Sem pedidos divididos no período.",
       decisao:
-        "Testar a regra nova onde há mais casos: no mês, no dia e na hora com mais pedidos partidos.",
+        "Testar a regra nova onde há mais casos: no mês, no dia e na hora com mais pedidos divididos entre ondas.",
       ligacao: {
         texto: "Ver os divididos por período",
         pagina: "/ondas",

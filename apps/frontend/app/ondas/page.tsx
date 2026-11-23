@@ -90,8 +90,8 @@ async function PedidosDivididosCartao({ filtros }: { filtros: FiltrosUrl }) {
           titulo={`${formatarNumero(d.pedidosValidos)} pedidos`}
           segmentos={[
             { valor: d.pedidosValidos - d.pedidosDivididos, rotulo: "saíram numa só onda", classe: "bg-stone-300" },
-            { valor: d.divididosMaisDe24, rotulo: "partidos, mas tinham mais de 24 un. (não cabiam)", classe: "bg-[#86b6ef]" },
-            { valor: d.divididosAte24, rotulo: "partidos quando cabiam numa onda", classe: "bg-amber-500" },
+            { valor: d.divididosMaisDe24, rotulo: "divididos, mas tinham mais de 24 un. (não cabiam numa onda)", classe: "bg-[#86b6ef]" },
+            { valor: d.divididosAte24, rotulo: "divididos quando cabiam numa onda", classe: "bg-amber-500" },
           ]}
         />
       }

@@ -35,7 +35,7 @@ export async function OndasIncompletasCartao({ filtros }: { filtros: FiltrosUrl 
       leitura={
         semDados
           ? null
-          : `Em ${formatarNumero(dados.gruposDiaHora)} combinações de dia e hora; envolvem ${formatarNumero(dados.pedidosDivididosEnvolvidos)} pedidos partidos.`
+          : `Em ${formatarNumero(dados.gruposDiaHora)} combinações de dia e hora; envolvem ${formatarNumero(dados.pedidosDivididosEnvolvidos)} pedidos divididos entre ondas.`
       }
     >
       <ValorIndicador texto={valor} unidade="ondas" />
