@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { ErroApi } from "@/components/erro-api";
+import { BarrasPeriodo, type ItemBarra } from "@/components/graficos";
 import { TabelaRecolhida } from "@/components/tabela-recolhida";
+import { VerDetalhe } from "@/components/ver-detalhe";
 import {
   obterCarga,
   obterDividosPorPeriodo,
@@ -41,22 +43,98 @@ function DividosPorPeriodoSecao({ dados }: { dados: DividosPorPeriodo }) {
         Pedidos divididos por período
       </h2>
       <p className="mt-1 text-sm text-stone-500">
-        Ranking da alavanca (b): por nº de pedidos divididos (mais primeiro); em empate, menor ocupação média das ondas.{" "}
+        Onde se concentram os pedidos divididos entre ondas: é aí que faz sentido testar outra regra de constituição das
+        ondas. A laranja, o período de topo do ranking (mais divididos; em empate, menor ocupação média).{" "}
         <span title={dados.definicao}>(definição)</span>
       </p>
+      <ConclusaoDivididos dados={dados} />
       <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <TabelaDivididos
-          titulo="Por mês (por dia com atividade)"
-          linhas={dados.meses.map((m) => ({ chave: m.mes, rotulo: formatarMes(m.mes), ...m }))}
-          mostrarPorDia
-        />
-        <TabelaDivididos
-          titulo="Por dia da semana"
-          linhas={dados.diasDaSemana.map((d) => ({ chave: String(d.dia), rotulo: d.nome, marca: d.domingo ? "domingo" : undefined, ...d }))}
-        />
-        <TabelaDivididos titulo="Por hora" linhas={dados.horas.map((h) => ({ chave: String(h.hora), rotulo: `${h.hora}h`, ...h }))} />
+        <GraficoDivididos titulo="Por mês" itens={itensPorMes(dados)} />
+        <GraficoDivididos titulo="Por dia da semana" itens={itensPorDia(dados)} />
+        <GraficoDivididos titulo="Por hora" itens={itensPorHora(dados)} />
       </div>
+      <VerDetalhe titulo="ranking em tabela (mês, dia da semana e hora)" className="mt-3">
+        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-3">
+          <TabelaDivididos
+            titulo="Por mês (por dia com atividade)"
+            linhas={dados.meses.map((m) => ({ chave: m.mes, rotulo: formatarMes(m.mes), ...m }))}
+            mostrarPorDia
+          />
+          <TabelaDivididos
+            titulo="Por dia da semana"
+            linhas={dados.diasDaSemana.map((d) => ({ chave: String(d.dia), rotulo: d.nome, marca: d.domingo ? "domingo" : undefined, ...d }))}
+          />
+          <TabelaDivididos titulo="Por hora" linhas={dados.horas.map((h) => ({ chave: String(h.hora), rotulo: `${h.hora}h`, ...h }))} />
+        </div>
+      </VerDetalhe>
     </section>
+  );
+}
+
+/** A leitura da secção numa frase: os períodos de topo de cada ranking (vêm em primeiro lugar da API). */
+function ConclusaoDivididos({ dados }: { dados: DividosPorPeriodo }) {
+  const [mes] = dados.meses;
+  const [dia] = dados.diasDaSemana;
+  const [hora] = dados.horas;
+  if (!mes || !dia || !hora) return null;
+  return (
+    <p className="mt-3 rounded-lg border-l-4 border-amber-400 bg-white px-4 py-3 text-sm text-stone-800 shadow-sm">
+      Os pedidos divididos concentram-se em <strong>{MES_LONGO[Number(mes.mes.slice(5)) - 1]} de {mes.mes.slice(0, 4)}</strong> (
+      {formatarPercentagemOuNulo(mes.percentagem) ?? "sem dados"} dos pedidos do mês), à <strong>{dia.nome}</strong> e às{" "}
+      <strong>{hora.hora}h</strong>: são os primeiros sítios onde testar uma regra nova.
+    </p>
+  );
+}
+
+const MES_LONGO = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const MES_CURTO = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const DIA_CURTO: Record<string, string> = {
+  "segunda-feira": "seg",
+  "terça-feira": "ter",
+  "quarta-feira": "qua",
+  "quinta-feira": "qui",
+  "sexta-feira": "sex",
+  sábado: "sáb",
+  domingo: "dom",
+};
+
+function dicaPeriodo(p: PeriodoDividido): string[] {
+  return [
+    `${formatarPercentagemOuNulo(p.percentagem) ?? "sem dados"} dos ${formatarNumero(p.pedidosValidos)} pedidos do período`,
+    `Ocupação média das ondas: ${formatarPercentagemOuNulo(p.ocupacaoMedia) ?? "sem dados"}`,
+  ];
+}
+
+/** Ordem natural (cronológica) para o gráfico; o destaque é o primeiro do ranking da API. */
+function itensPorMes(d: DividosPorPeriodo): ItemBarra[] {
+  const topo = d.meses[0]?.mes;
+  return [...d.meses]
+    .sort((x, y) => x.mes.localeCompare(y.mes))
+    .map((m) => ({ rotulo: MES_CURTO[Number(m.mes.slice(5)) - 1], valor: m.pedidosDivididos, destaque: m.mes === topo, dica: [formatarMes(m.mes), ...dicaPeriodo(m)] }));
+}
+
+function itensPorDia(d: DividosPorPeriodo): ItemBarra[] {
+  const topo = d.diasDaSemana[0]?.dia;
+  return [...d.diasDaSemana]
+    .sort((x, y) => ((x.dia + 6) % 7) - ((y.dia + 6) % 7))
+    .map((x) => ({ rotulo: DIA_CURTO[x.nome] ?? x.nome, valor: x.pedidosDivididos, destaque: x.dia === topo, dica: [x.nome, ...dicaPeriodo(x)] }));
+}
+
+function itensPorHora(d: DividosPorPeriodo): ItemBarra[] {
+  const topo = d.horas[0]?.hora;
+  return [...d.horas]
+    .sort((x, y) => x.hora - y.hora)
+    .map((h) => ({ rotulo: `${h.hora}h`, valor: h.pedidosDivididos, destaque: h.hora === topo, dica: dicaPeriodo(h) }));
+}
+
+function GraficoDivididos({ titulo, itens }: { titulo: string; itens: ItemBarra[] }) {
+  return (
+    <figure className={CARTAO}>
+      <figcaption className="text-sm font-medium text-stone-500">{titulo}: pedidos divididos</figcaption>
+      <div className="mt-2">
+        <BarrasPeriodo itens={itens} unidade="pedidos divididos" />
+      </div>
+    </figure>
   );
 }
 

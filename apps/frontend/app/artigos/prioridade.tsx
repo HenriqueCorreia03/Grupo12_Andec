@@ -1,6 +1,8 @@
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
+import { BarrasHorizontais } from "@/components/graficos";
 import { TabelaRecolhida } from "@/components/tabela-recolhida";
+import { VerDetalhe } from "@/components/ver-detalhe";
 import { obterPrioridade, type PrioridadeDosArtigos } from "@/lib/api";
 import type { FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarNumeroOuNulo } from "@/lib/formatar";
@@ -20,7 +22,11 @@ export async function PrioridadeArtigos({ filtros }: { filtros: FiltrosUrl }) {
   const { localizacoes } = resumoA;
   const mediana = formatarNumeroOuNulo(localizacoes.mediana);
 
+  const topo = artigos.slice(0, 10);
+  const [primeiro] = artigos;
+
   return (
+    <div className="space-y-4">
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <CartaoIndicador
         titulo="Localizações distintas por artigo A"
@@ -49,7 +55,36 @@ export async function PrioridadeArtigos({ filtros }: { filtros: FiltrosUrl }) {
         </p>
       </CartaoIndicador>
 
-      <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
+      <figure className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
+        <figcaption className="text-sm font-medium text-stone-500">
+          Os 10 primeiros da lista de prioridade: de quantas localizações diferentes sai cada um
+        </figcaption>
+        {primeiro && (
+          <p className="mt-1 text-sm text-stone-700">
+            O <strong>{primeiro.referencia}</strong> lidera: {formatarNumero(primeiro.paragens)} paragens em{" "}
+            {formatarNumero(primeiro.localizacoesDistintas)} localizações diferentes. É por aqui que começa a reorganização.
+          </p>
+        )}
+        <div className="mt-3">
+          <BarrasHorizontais
+            unidade="localizações diferentes"
+            itens={topo.map((a, i) => ({
+              rotulo: a.referencia,
+              valor: a.localizacoesDistintas,
+              destaque: i === 0,
+              dica: [
+                `${i + 1}.º na prioridade · classe ${a.classe ?? "—"}`,
+                `${formatarNumero(a.paragens)} paragens · ${formatarNumero(a.unidadesRecolhidas)} un. recolhidas`,
+                ...(a.passaPeloRc01 ? ["Passa pelo RC-01 (conta como 1 localização)"] : []),
+              ],
+            }))}
+          />
+        </div>
+      </figure>
+    </div>
+
+      <VerDetalhe titulo={`lista de prioridade completa (${formatarNumero(artigos.length)} referências com picking)`}>
+      <div className="overflow-x-auto">
         {artigos.length === 0 ? (
           <p className="p-5 text-sm text-stone-500">sem dados</p>
         ) : (
@@ -89,6 +124,7 @@ export async function PrioridadeArtigos({ filtros }: { filtros: FiltrosUrl }) {
           † Passa pelo RC-01, contado como 1 localização. Fonte: {corpo.fonte}.
         </p>
       </div>
+      </VerDetalhe>
     </div>
   );
 }

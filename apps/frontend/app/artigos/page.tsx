@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
 import { FaixaKpi, FaixaKpiACarregar } from "@/components/faixa-kpi";
+import { CurvaAbc, type PontoAbc } from "@/components/graficos";
 import { TabelaRecolhida } from "@/components/tabela-recolhida";
 import {
   obterAbc,
@@ -198,8 +199,39 @@ async function DrillDownAbc({ searchParams }: { searchParams: PageProps<"/artigo
     );
   }
 
+  // Curva do ABC: só as referências com procura no período, pela posição do ranking. O acumulado depois de cada
+  // referência é o "acumulado antes" da seguinte (da API); a última fecha nos 100 %.
+  const ordenadas = abc.referencias
+    .filter((r) => r.posicao !== null && r.classePeriodo !== null && r.acumuladoAntes !== null)
+    .sort((x, y) => (x.posicao ?? 0) - (y.posicao ?? 0));
+  const pontos: PontoAbc[] = ordenadas.map((r, i) => ({
+    posicao: r.posicao ?? i + 1,
+    referencia: r.referencia,
+    unidades: r.unidades,
+    classe: r.classePeriodo ?? "C",
+    acumulado: ordenadas[i + 1]?.acumuladoAntes ?? 100,
+  }));
+  const classeA = abc.classes.find((c) => c.classe === "A");
+
   return (
     <div className="mt-4 space-y-6">
+      {pontos.length > 0 && (
+        <figure className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
+          <figcaption className="text-sm font-medium text-stone-500">
+            Concentração da procura: % das unidades acumulada, da referência que mais vende à que menos
+          </figcaption>
+          {classeA && (
+            <p className="mt-1 text-sm text-stone-700">
+              Só <strong>{formatarNumero(classeA.referencias)}</strong> de {formatarNumero(pontos.length)} referências
+              fazem <strong>{formatarPercentagemOuNulo(classeA.percentagemUnidades) ?? "sem dados"}</strong> das unidades:
+              reorganizar poucos artigos chega a quase tudo o que sai.
+            </p>
+          )}
+          <div className="mt-3">
+            <CurvaAbc pontos={pontos} />
+          </div>
+        </figure>
+      )}
       <SeletorClasse abc={abc} filtros={filtros} />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <TabelaReferencias abc={abc} filtros={filtros} detalhe={detalhe} todas={todas} />
