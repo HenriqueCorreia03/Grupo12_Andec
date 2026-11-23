@@ -54,7 +54,7 @@ export async function DetalheDaOnda({ onda, filtros }: { onda: string; filtros: 
         <Facto rotulo="Localizações" valor={formatarNumero(detalhe.localizacoes.length)} />
       </dl>
 
-      <div className="mt-5 grid gap-6 lg:grid-cols-2">
+      <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section>
           <h3 className="text-sm font-medium text-stone-500">Pedidos</h3>
           <table className="mt-2 w-full text-sm">
@@ -78,20 +78,20 @@ export async function DetalheDaOnda({ onda, filtros }: { onda: string; filtros: 
                         dividido (também na onda {p.outrasOndas.join(", ")})
                       </span>
                     ) : (
-                      <span className="text-stone-400">inteiro</span>
+                      <span className="text-stone-500">inteiro</span>
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {detalhe.pedidos.length === 0 && <p className="mt-2 text-sm text-stone-400">sem dados</p>}
+          {detalhe.pedidos.length === 0 && <p className="mt-2 text-sm text-stone-500">sem dados</p>}
         </section>
 
         <section>
           <h3 className="text-sm font-medium text-stone-500">Localizações e zonas</h3>
           {detalhe.localizacoes.length === 0 ? (
-            <p className="mt-2 text-sm text-stone-400">sem picking: a onda não tem localizações.</p>
+            <p className="mt-2 text-sm text-stone-500">sem picking: a onda não tem localizações.</p>
           ) : (
             <ul className="mt-2 space-y-0.5 text-sm">
               {detalhe.localizacoes.map((l) => (

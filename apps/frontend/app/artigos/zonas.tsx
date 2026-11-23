@@ -30,7 +30,7 @@ export async function ParticipacaoZonas({ filtros }: { filtros: FiltrosUrl }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <CartaoIndicador
           titulo="Participação por zona"
           metadados={zonas}
@@ -76,7 +76,7 @@ export async function ParticipacaoZonas({ filtros }: { filtros: FiltrosUrl }) {
         </CartaoIndicador>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <CartaoIndicador
           titulo="Unidades encomendadas por zona"
           metadados={encomenda}

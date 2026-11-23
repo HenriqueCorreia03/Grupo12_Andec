@@ -43,7 +43,7 @@ function DividosPorPeriodoSecao({ dados }: { dados: DividosPorPeriodo }) {
         Ranking da alavanca (b): por nº de pedidos divididos (mais primeiro); em empate, menor ocupação média das ondas.{" "}
         <span title={dados.definicao}>(definição)</span>
       </p>
-      <div className="mt-3 grid gap-4 lg:grid-cols-3">
+      <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <TabelaDivididos
           titulo="Por mês (por dia com atividade)"
           linhas={dados.meses.map((m) => ({ chave: m.mes, rotulo: formatarMes(m.mes), ...m }))}
@@ -70,7 +70,7 @@ function TabelaDivididos({ titulo, linhas, mostrarPorDia = false }: { titulo: st
     return (
       <div className={CARTAO}>
         <h3 className="text-sm font-medium text-stone-500">{titulo}</h3>
-        <p className="mt-2 text-sm text-stone-400">sem dados</p>
+        <p className="mt-2 text-sm text-stone-500">sem dados</p>
       </div>
     );
   }
@@ -123,7 +123,7 @@ function CargaSecao({ dados }: { dados: CargaPorPeriodo }) {
         Pedidos, unidades e ondas por dia com atividade (dia com pelo menos 1 pedido criado, domingos incluídos e assinalados).{" "}
         <span title={dados.definicao}>(definição)</span>
       </p>
-      <div className="mt-3 grid gap-4 lg:grid-cols-3">
+      <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <CargaBarras
           titulo="Por mês"
           linhas={dados.porMes.map((m) => ({
@@ -159,7 +159,7 @@ function CargaBarras({ titulo, linhas }: { titulo: string; linhas: LinhaCarga[] 
     return (
       <div className={CARTAO}>
         <h3 className="text-sm font-medium text-stone-500">{titulo}</h3>
-        <p className="mt-2 text-sm text-stone-400">sem dados</p>
+        <p className="mt-2 text-sm text-stone-500">sem dados</p>
       </div>
     );
   }
@@ -200,7 +200,7 @@ function CargaOperador({ operadores, rotulo }: { operadores: { operador: string;
         Carga por operador recolhedor <span className="ml-2 rounded bg-stone-100 px-1.5 py-0.5 text-xs text-stone-700">{rotulo}</span>
       </h3>
       {operadores.length === 0 ? (
-        <p className="mt-2 text-sm text-stone-400">sem dados</p>
+        <p className="mt-2 text-sm text-stone-500">sem dados</p>
       ) : (
         <div className="mt-2 max-h-72 overflow-auto">
           <table className="w-full text-sm sm:w-auto">

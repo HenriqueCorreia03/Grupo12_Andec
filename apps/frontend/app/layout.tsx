@@ -5,7 +5,10 @@ import { PainelFiltros } from "@/components/painel-filtros";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Armazém de calçado: prioridades de operação",
+  title: {
+    default: "Armazém de calçado: prioridades de operação",
+    template: "%s · Armazém de calçado",
+  },
   description:
     "Dashboard para comparar as alavancas de melhoria do armazém: localizações e ondas de picking.",
 };

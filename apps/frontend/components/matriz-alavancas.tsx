@@ -1,4 +1,11 @@
 import type { CriterioMedido, EsforcoMatriz, MatrizAlavancas, NotaMatriz } from "@/lib/api";
+
+/** O que a leitura precisa de cada alavanca: só as notas dos três critérios. */
+interface NotasDaAlavanca {
+  impacto: { nota: NotaMatriz | null };
+  robustez: { nota: NotaMatriz | null };
+  esforco: { nota: NotaMatriz | null };
+}
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
 
 /**
@@ -22,39 +29,32 @@ export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
         </p>
       )}
 
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[36rem] text-sm">
-          <thead>
-            <tr className="text-left text-stone-500">
-              <th className="pb-2 font-normal">Alavanca</th>
-              <th className="pb-2 font-normal">Impacto (espaço de melhoria)</th>
-              <th className="pb-2 font-normal">Robustez da evidência</th>
-              <th className="pb-2 font-normal">Esforço (juízo da equipa)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {linhas.map(({ id, nome, alavanca }) => (
-              <tr key={id} className="border-t border-stone-200 align-top">
-                <th scope="row" className="py-3 pr-4 text-left font-medium">
-                  {nome}
-                </th>
-                <td className="py-3 pr-4">
-                  <CelulaMedida criterio={alavanca.impacto} />
-                </td>
-                <td className="py-3 pr-4">
-                  <CelulaMedida criterio={alavanca.robustez} />
-                </td>
-                <td className="py-3">
-                  <CelulaEsforco esforco={alavanca.esforco} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+        {linhas.map(({ id, nome, alavanca }) => (
+          <section key={id} aria-label={nome} className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+            <h3 className="font-semibold">{nome}</h3>
+            <dl className="mt-3 grid grid-cols-3 gap-3 text-sm">
+              <NotaGrande rotulo="Impacto" nota={alavanca.impacto.nota} detalhe={percentagem(alavanca.impacto.valor)} />
+              <NotaGrande rotulo="Robustez" nota={alavanca.robustez.nota} detalhe={percentagem(alavanca.robustez.valor)} />
+              <NotaGrande rotulo="Esforço" nota={alavanca.esforco.nota} detalhe={alavanca.esforco.rotulo} />
+            </dl>
+            {alavanca.robustez.avisoLimiar && (
+              <p className="mt-3 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">⚠ {alavanca.robustez.avisoLimiar}</p>
+            )}
+            {alavanca.impacto.avisoLimiar && (
+              <p className="mt-3 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">⚠ {alavanca.impacto.avisoLimiar}</p>
+            )}
+            <p className="mt-3 text-xs text-stone-600">Esforço: {alavanca.esforco.origem}, não é medido.</p>
+          </section>
+        ))}
       </div>
+      <p className="mt-3 text-sm text-stone-700">
+        <span className="font-medium">Leitura das notas</span> (3 = melhor em cada critério): {leitura(a, b)}
+      </p>
 
-      <h3 className="mt-5 text-sm font-semibold">Justificações</h3>
-      <dl className="mt-2 space-y-3 text-sm">
+      <details className="mt-4 rounded border border-stone-200 p-3">
+        <summary className="cursor-pointer text-sm font-semibold">Justificações de cada nota</summary>
+      <dl className="mt-3 space-y-3 text-sm">
         <Justificacao titulo="Impacto (a)" criterio={a.impacto}>
           {percentagem(a.impacto.valor)} das paragens de artigos A ({formatarNumero(a.impacto.numerador)} de{" "}
           {formatarNumero(a.impacto.denominador)}; {formatarNumero(a.impacto.artigosA)} artigos A com picking) são feitas
@@ -85,8 +85,36 @@ export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
         </Justificacao>
         <JustificacaoEsforco titulo="Esforço (b)" esforco={b.esforco} />
       </dl>
+      </details>
     </article>
   );
+}
+
+/** Nota 1–3 em destaque, com o valor que a justifica por baixo. */
+function NotaGrande({ rotulo, nota, detalhe }: { rotulo: string; nota: NotaMatriz | null; detalhe: string }) {
+  return (
+    <div>
+      <dt className="text-xs text-stone-600">{rotulo}</dt>
+      <dd>
+        <span className="block text-4xl font-semibold leading-none">{nota ?? "—"}</span>
+        <span className="mt-1 block text-xs text-stone-600">{detalhe}</span>
+      </dd>
+    </div>
+  );
+}
+
+/** Compara só as notas (3 = melhor): quem lidera em cada critério, ou "empate". Não inventa nenhuma recomendação. */
+function leitura(a: NotasDaAlavanca, b: NotasDaAlavanca): string {
+  const comparar = (criterio: string, na: NotaMatriz | null, nb: NotaMatriz | null) => {
+    if (na === null || nb === null) return `${criterio}: sem nota`;
+    if (na === nb) return `${criterio}: empate (${na})`;
+    return `${criterio}: ${na > nb ? "(a)" : "(b)"} ${na > nb ? na : nb} contra ${na > nb ? nb : na}`;
+  };
+  return [
+    comparar("maior impacto", a.impacto.nota, b.impacto.nota),
+    comparar("evidência mais robusta", a.robustez.nota, b.robustez.nota),
+    comparar("menor esforço", a.esforco.nota, b.esforco.nota),
+  ].join("; ") + ".";
 }
 
 function percentagem(valor: number | null): string {

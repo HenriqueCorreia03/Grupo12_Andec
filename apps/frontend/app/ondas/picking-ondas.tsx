@@ -1,12 +1,23 @@
 import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { obterPicking, type OcupacaoDasOndas, type OndaPicking, type PickingDasOndas } from "@/lib/api";
 import { consulta, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarNumeroOuNulo, formatarPercentagemOuNulo } from "@/lib/formatar";
 
 /** Indicadores de picking por onda (ticket 04): só apresenta, os valores vêm calculados pela API. */
-export async function PickingOndas({ filtros }: { filtros: FiltrosUrl }) {
+export async function PickingOndas({
+  filtros,
+  lista = "incompletas",
+  aoLadoDosCartoes,
+}: {
+  filtros: FiltrosUrl;
+  /** Que ondas a lista mostra: só as incompletas (< 24 un., por omissão) ou todas. */
+  lista?: "incompletas" | "todas";
+  /** Cartão extra, logo a seguir aos cartões de picking (ocupação, paragens, localizações). */
+  aoLadoDosCartoes?: ReactNode;
+}) {
   let dados: PickingDasOndas;
   try {
     dados = await obterPicking(filtros);
@@ -45,8 +56,9 @@ export async function PickingOndas({ filtros }: { filtros: FiltrosUrl }) {
         />
       </CartaoIndicador>
 
+      {aoLadoDosCartoes}
       <GraficoOcupacao ocupacao={ocupacao} />
-      {filtros.onda === undefined && <ListaDeOndas ondas={dados.ondas} filtros={filtros} />}
+      {filtros.onda === undefined && <ListaDeOndas ondas={dados.ondas} filtros={filtros} lista={lista} />}
     </>
   );
 }
@@ -56,7 +68,7 @@ function GraficoOcupacao({ ocupacao }: { ocupacao: OcupacaoDasOndas }) {
   const { distribuicao } = ocupacao;
   if (distribuicao.length === 0) {
     return (
-      <div className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-400 sm:col-span-2 lg:col-span-3">
+      <div className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-500 sm:col-span-2 lg:col-span-3">
         sem dados
       </div>
     );
@@ -98,14 +110,27 @@ function GraficoOcupacao({ ocupacao }: { ocupacao: OcupacaoDasOndas }) {
 const ONDAS_NA_LISTA = 25;
 
 /** As primeiras ondas do filtro atual; cada uma abre o detalhe (drill-through), mantendo os filtros globais. */
-function ListaDeOndas({ ondas, filtros }: { ondas: OndaPicking[]; filtros: FiltrosUrl }) {
-  if (ondas.length === 0) return null;
+function ListaDeOndas({ ondas: todasAsOndas, filtros, lista }: { ondas: OndaPicking[]; filtros: FiltrosUrl; lista: "incompletas" | "todas" }) {
+  if (todasAsOndas.length === 0) return null;
+  const incompletas = todasAsOndas.filter((o) => o.unidadesDaOnda < 24);
+  const ondas = lista === "incompletas" ? incompletas : todasAsOndas;
+  const hrefLista = (valor: "incompletas" | "todas") => `/ondas${consulta(filtros, { lista: valor === "todas" ? "todas" : null })}`;
   return (
-    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm sm:col-span-2 lg:col-span-3">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white shadow-sm sm:col-span-2 lg:col-span-3">
+      <table className="w-full min-w-[32rem] text-sm">
         <caption className="px-4 py-3 text-left text-sm font-medium text-stone-500">
-          Ondas (primeiras {formatarNumero(Math.min(ONDAS_NA_LISTA, ondas.length))} de {formatarNumero(ondas.length)}):
-          clique numa onda para ver o detalhe. Use os filtros (mês, zona, operador…) para chegar a outras.
+          {lista === "incompletas" ? "Ondas incompletas (< 24 un.)" : "Todas as ondas"}: primeiras{" "}
+          {formatarNumero(Math.min(ONDAS_NA_LISTA, ondas.length))} de {formatarNumero(ondas.length)}. Clique numa onda para ver o
+          detalhe.{" "}
+          {lista === "incompletas" ? (
+            <Link href={hrefLista("todas")} className="underline underline-offset-2">
+              Ver todas ({formatarNumero(todasAsOndas.length)})
+            </Link>
+          ) : (
+            <Link href={hrefLista("incompletas")} className="underline underline-offset-2">
+              Ver só as incompletas ({formatarNumero(incompletas.length)})
+            </Link>
+          )}
         </caption>
         <thead className="border-y border-stone-200 bg-stone-50 text-left text-stone-500">
           <tr>
@@ -127,7 +152,7 @@ function ListaDeOndas({ ondas, filtros }: { ondas: OndaPicking[]; filtros: Filtr
                   {o.onda}
                 </Link>
               </td>
-              <td className="px-4 py-1.5 text-stone-500">{o.data ? `${o.data} ${o.hora ?? ""}` : "—"}</td>
+              <td className="whitespace-nowrap px-4 py-1.5 text-stone-500">{o.data ? `${o.data} ${o.hora ?? ""}` : "—"}</td>
               <td className="px-4 py-1.5 text-right">{formatarNumero(o.unidades)}</td>
               <td className="px-4 py-1.5 text-right">{formatarPercentagemOuNulo(o.ocupacao)}</td>
               <td className="px-4 py-1.5 text-right">{formatarNumero(o.localizacoes)}</td>

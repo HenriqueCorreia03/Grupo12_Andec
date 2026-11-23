@@ -100,7 +100,7 @@ function textoComparacao(comparacao: Comparacao | undefined): string {
 /** Valor principal de um cartão; "sem dados" quando a API devolve nulo. */
 export function ValorIndicador({ texto, unidade }: { texto: string | null; unidade?: string }) {
   if (texto === null) {
-    return <p className="mt-2 text-2xl font-semibold text-stone-400">sem dados</p>;
+    return <p className="mt-2 text-2xl font-semibold text-stone-500">sem dados</p>;
   }
   return (
     <p className="mt-2 text-3xl font-semibold">

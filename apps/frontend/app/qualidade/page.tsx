@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { ErroApi } from "@/components/erro-api";
 import { obterQualidade, type Qualidade } from "@/lib/api";
 import { filtrosDeObjeto } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
+
+export const metadata: Metadata = { title: "Qualidade dos dados" };
 
 export default function QualidadePage({ searchParams }: PageProps<"/qualidade">) {
   return (
@@ -43,7 +46,7 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
         </p>
       )}
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Seccao titulo="Exclusões e contagens">
           <Tabela
             linhas={[

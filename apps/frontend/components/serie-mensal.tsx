@@ -24,12 +24,12 @@ const MEDIDAS: { chave: Medida; titulo: string }[] = [
 /** Série mensal em quatro pequenos gráficos de barras (um eixo cada), com a tabela por baixo. */
 export function GraficosSerieMensal({ serie, mesSelecionado }: { serie: SerieMensal; mesSelecionado: string | null }) {
   if (serie.meses.length === 0) {
-    return <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-400">sem dados</p>;
+    return <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-500">sem dados</p>;
   }
   const dados = serie.meses.map((m) => ({ ...m, rotulo: `${formatarMesCurto(m.mes)}${m.parcial ? "*" : ""}` }));
   return (
     <div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {MEDIDAS.map((medida) => (
           <figure key={medida.chave} className="rounded-lg border border-stone-200 bg-white p-4">
             <figcaption className="text-sm font-medium text-stone-500">{medida.titulo}</figcaption>

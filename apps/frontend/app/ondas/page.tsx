@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
@@ -9,6 +10,8 @@ import { OndasIncompletasCartao } from "./ondas-incompletas";
 import { PeriodosDaAlavancaB } from "./periodos";
 import { PickingOndas } from "./picking-ondas";
 
+export const metadata: Metadata = { title: "Ondas e pedidos" };
+
 export default function OndasPage({ searchParams }: PageProps<"/ondas">) {
   return (
     <section>
@@ -16,7 +19,7 @@ export default function OndasPage({ searchParams }: PageProps<"/ondas">) {
       <p className="mt-1 text-sm text-stone-500">
         Alavanca (b). Indicadores calculados no servidor. Passe o rato por um cartão para ver a definição.
       </p>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Suspense fallback={<div className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
           <IndicadoresDasOndas searchParams={searchParams} />
         </Suspense>
@@ -26,7 +29,10 @@ export default function OndasPage({ searchParams }: PageProps<"/ondas">) {
 }
 
 async function IndicadoresDasOndas({ searchParams }: { searchParams: PageProps<"/ondas">["searchParams"] }) {
-  const filtros = filtrosDeObjeto(await searchParams);
+  const params = await searchParams;
+  const filtros = filtrosDeObjeto(params);
+  // A lista de ondas mostra só as incompletas por omissão; `lista=todas` mostra todas.
+  const lista = params.lista === "todas" ? "todas" : "incompletas";
   return (
     <>
       {filtros.onda !== undefined && (
@@ -35,8 +41,17 @@ async function IndicadoresDasOndas({ searchParams }: { searchParams: PageProps<"
         </div>
       )}
       <PedidosDivididosCartao filtros={filtros} />
-      <PickingOndas filtros={filtros} />
-      {filtros.onda === undefined && <OndasIncompletasCartao filtros={filtros} />}
+      <PickingOndas
+        filtros={filtros}
+        lista={lista}
+        aoLadoDosCartoes={
+          filtros.onda === undefined && (
+            <div className="sm:col-span-2">
+              <OndasIncompletasCartao filtros={filtros} />
+            </div>
+          )
+        }
+      />
       {filtros.onda === undefined && <PeriodosDaAlavancaB filtros={filtros} />}
     </>
   );
