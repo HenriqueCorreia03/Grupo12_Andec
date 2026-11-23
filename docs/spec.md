@@ -356,13 +356,24 @@ Outros elementos extra, fora das tabelas de indicadores: comparação ABC ↔ AB
 - **Regra das 10 linhas:** qualquer tabela com mais de 10 linhas mostra as 10 primeiras, pela ordem do indicador, e um botão "Ver todas (N)" que a abre por inteiro. Se a linha escolhida (por exemplo, a referência do drill-down) estiver fora das primeiras, a tabela abre já inteira. A lista de ondas, que pode ter milhares de linhas, só é montada por inteiro quando se pede (`ondas=todas` no URL).
 - **Detalhe técnico recolhido:** grelhas e decomposições que servem para auditar (grelha referência × mês da estabilidade, listas de localizações não mapeadas, justificações da matriz, linhas de uma onda) ficam num bloco "Ver detalhe" fechado por omissão. Dentro de um "Ver detalhe" a tabela mostra logo todas as linhas, para o detalhe ficar a um só clique.
 - **Nada se perde:** todos os valores continuam acessíveis, no máximo a um clique; os filtros aplicam-se a tudo; o drill-down do ABC continua a funcionar.
-- **Cores de bom/mau só onde há limiares:** as notas da matriz das alavancas (3 = melhor, pelos limiares desta spec) ficam a verde (3), amarelo (2) e vermelho (1), sempre com o número e uma palavra ao lado. Os outros KPI não têm meta definida e ficam sem cor até a equipa decidir e registar os limiares (ticket 20).
+- **Cores de bom/mau só onde há limiares (ticket 20):** uma só regra em todo o dashboard: **vermelho = precisa de ação; amarelo = atenção; verde = está bem**. Só têm cor as quatro medidas da matriz com limiares nesta spec (impacto e robustez das duas alavancas) e o esforço. No impacto a escala inverte-se: nota 3 (≥ 30 %) = muito a melhorar = vermelho. A cor vem sempre com o número e uma palavra ("muito a melhorar", "razoável", "fiável"…). Os outros KPI são descritivos, não têm meta e ficam sem cor.
+
+**Diagnóstico da Visão geral (ticket 20).** Logo a seguir ao título, quatro cartões, um por pergunta, com o valor (da API), o estado (cor + palavra, pela nota da matriz) e o que fazer. A frase de ação é fixa por estado e está nesta tabela; muda sozinha quando o valor muda de nível. Usa sempre o dataset completo, como a matriz.
+
+| Pergunta | Medida (nota da matriz) | Vermelho / amarelo: o que fazer | Verde: o que fazer | Ligação |
+|---|---|---|---|---|
+| Os artigos A estão espalhados por muitas localizações? | Impacto (a) | Reorganizar as localizações dos artigos A, a começar pelos do topo do ranking de prioridade. | Os artigos A já estão concentrados: reorganizar tem pouco a ganhar. | Artigos, ranking de prioridade |
+| Há pedidos divididos entre ondas que se podiam evitar? | Impacto (b) | Rever a regra de constituição das ondas, a começar pelos períodos com mais pedidos divididos. | Mudar a regra das ondas tem pouco a ganhar: poucas divisões são evitáveis. | Ondas, pedidos divididos por período |
+| Os dados das localizações são fiáveis? | Robustez (a) | Mapear o RC-01 e as outras localizações em falta (vermelho: antes de reorganizar; amarelo: para confirmar a dispersão real). | Nada urgente: quase tudo é recolhido em localizações mapeadas. | Qualidade |
+| A ligação entre encomendas e picking é fiável? | Robustez (b) | Rever as linhas de encomenda sem correspondência no picking antes de mudar as ondas. | Nada urgente: quase todas as linhas de encomenda têm correspondência no picking. | Qualidade |
+
+No dataset completo: (a) dispersão 72,15 % = vermelho; (b) divididos evitáveis 7,74 % = verde; robustez (a) 89,03 % = amarelo; robustez (b) 95,02 % = verde, com o aviso "colado ao limiar".
 
 Ordem de cada página:
 
 | Página | (1) KPI | (2) Resumo visual | (3) Detalhe |
 |---|---|---|---|
-| Visão geral | Tamanho médio; pedidos por onda; volume por dia com atividade; participação por setor; multissetor; ABC | Matriz das duas alavancas (justificações recolhidas) | Série mensal |
+| Visão geral | Diagnóstico (4 cartões: o que está bem, o que está mal e o que fazer); indicadores da operação: tamanho médio, pedidos por onda, volume por dia com atividade, participação por setor, multissetor, ABC | Matriz das duas alavancas (justificações recolhidas) | Série mensal |
 | Artigos, ABC e localizações | Artigos A; % das unidades na classe A; estabilidade do ABC; não mapeadas; multizona | Seletor de classes A/B/C (refs e % das unidades) | Referências do ABC e tamanhos; prioridade; estabilidade (grelha recolhida); ABC ↔ ABCCOD; zonas |
 | Ondas e pedidos | Pedidos divididos; ocupação; paragens; localizações por onda; ondas incompletas simultâneas | Detalhe da onda (com filtro de onda); gráfico de ocupação | Lista de ondas; divididos e carga por período; carga por operador |
 | Qualidade dos dados | Encomendado não recolhido; sem correspondência; não mapeadas; duplicados; ligações repartidas | Barra da decomposição de "recolhido < encomendado" | Contagens; não mapeadas (lista recolhida); ligação e tamanhos; limitações; perguntas ao docente |

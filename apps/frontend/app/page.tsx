@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
+import { Diagnostico } from "@/components/diagnostico";
 import { ErroApi } from "@/components/erro-api";
 import { FaixaKpi, FaixaKpiACarregar } from "@/components/faixa-kpi";
 import { MatrizAlavancasView } from "@/components/matriz-alavancas";
@@ -19,22 +20,32 @@ import {
 export const metadata: Metadata = { title: { absolute: "Visão geral · Armazém de calçado" } };
 
 /**
- * Visão geral (ticket 19, "resumo primeiro, detalhe a pedido"): (1) faixa de KPI, (2) matriz das alavancas,
- * (3) evolução mensal.
+ * Visão geral (tickets 19 e 20, "resumo primeiro, detalhe a pedido"): (1) diagnóstico com o que está bem, o que está
+ * mal e o que fazer, e a faixa dos indicadores da operação; (2) matriz das alavancas; (3) evolução mensal.
  */
 export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
   return (
     <section>
       <h1 className="text-2xl font-semibold">Visão geral</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Os indicadores principais primeiro; o detalhe vem por baixo. Clique num cartão para ver a definição.
+        Primeiro o diagnóstico e os indicadores principais; o detalhe vem por baixo. Clique num cartão para ver a
+        definição.
       </p>
       <div className="mt-4">
+        <Suspense fallback={<FaixaKpiACarregar cartoes={4} />}>
+          <DiagnosticoDaOperacao searchParams={searchParams} />
+        </Suspense>
+      </div>
+      <h2 className="mt-8 text-lg font-semibold">Indicadores da operação</h2>
+      <p className="mt-1 text-sm text-stone-500">
+        Descritivos: não têm meta definida, por isso não têm cor de bom ou mau.
+      </p>
+      <div className="mt-3">
         <Suspense fallback={<FaixaKpiACarregar />}>
           <IndicadoresMinimos searchParams={searchParams} />
         </Suspense>
       </div>
-      <div className="mt-4">
+      <div className="mt-8">
         <Suspense fallback={<div className="h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
           <Matriz searchParams={searchParams} />
         </Suspense>
@@ -51,6 +62,17 @@ export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
       </div>
     </section>
   );
+}
+
+async function DiagnosticoDaOperacao({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+  const filtros = filtrosDeObjeto(await searchParams);
+  let matriz: VisaoGeral["matriz"];
+  try {
+    ({ matriz } = await obterVisaoGeral(filtros));
+  } catch (e) {
+    return <ErroApi mensagem={(e as Error).message} />;
+  }
+  return <Diagnostico matriz={matriz} filtros={filtros} />;
 }
 
 async function Matriz({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {

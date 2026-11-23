@@ -1,36 +1,36 @@
-# 20: [Extra] Limiares de negócio para os KPI (cores verde/amarelo/vermelho)
+# 20: [Extra] Diagnóstico na Visão geral: o que está bem, o que está mal e o que fazer
 
-**Grupo:** extra (decisão da equipa antes de código)
+**Grupo:** extra (apresentação)
 
-**Responsável:** por decidir
+**Responsável:** Henrique
 
-**What to build:** O diretor vê, em cada KPI, se o valor é bom, aceitável ou mau para o negócio, com cores verde, amarelo e vermelho. Hoje só a matriz das alavancas tem cores, porque só as notas da matriz têm limiares definidos na spec. Para os outros KPI não há meta definida: antes de qualquer cor é preciso decidir e registar os limiares.
+**What to build:** Na página inicial, o diretor percebe num relance o que está bem, o que está mal e o que pode fazer, sem ter de ler a matriz. Cores verde/amarelo/vermelho só onde a spec define limiares; o resto fica descritivo, sem cor. O detalhe continua disponível por baixo.
 
-**Blocked by:** 19 (Hierarquia da informação); decisão da equipa sobre os limiares (e, se preciso, pergunta ao docente)
+**Blocked by:** 19 (Hierarquia da informação)
 
-**Status:** needs-decision
+**Status:** ready-for-agent
 
-**Decisões a tomar (uma linha por KPI candidato):**
+**Decisões (tomadas com a equipa em 23/11/2026):**
+- Não se inventam metas. Os limiares de bom/mau são os que a spec já tem: impacto e robustez das duas alavancas (matriz). Os KPI sem meta (tamanho médio, pedidos por onda, volume, estabilidade, ocupação…) ficam sem cor, rotulados "descritivos".
+- Uma só regra de cores: vermelho = precisa de ação; amarelo = atenção; verde = está bem. No impacto a escala inverte-se (nota 3 = muito a melhorar = vermelho). A matriz usa a mesma regra.
+- A frase "o que fazer" é fixa por estado e fica na spec; o estado vem da nota que a API já calcula.
 
-| KPI | Pergunta | Proposta de partida (a validar) |
-|---|---|---|
-| Ocupação média das ondas | A partir de que % uma onda está "bem cheia"? | por decidir |
-| Pedidos divididos (≤ 24 un., evitáveis) | Que % de divisões evitáveis é aceitável? | por decidir |
-| Localizações distintas por artigo A | Quantas localizações por artigo A são aceitáveis? | por decidir |
-| Estabilidade do ABC | Que % de mudanças de classe ainda permite confiar no ABC? | por decidir |
-| Localizações não mapeadas | Que % do recolhido sem mapeamento invalida a análise por zona? | já existe o limiar da robustez (a) na matriz: reutilizar? |
-| Linhas do CO sem correspondência no PW | Idem | já existe o limiar da robustez (b) na matriz (95 %): reutilizar? |
-
-**Áreas do código tocadas (depois da decisão):**
-- Backend: os limiares num ficheiro de configuração, como o esforço da matriz, e a classificação (verde/amarelo/vermelho) devolvida pela API, para o frontend não decidir nada
-- Frontend: cor no `CartaoIndicador`, sempre com o número e uma palavra ao lado (a cor nunca vai sozinha)
-- `docs/spec.md`: tabela de limiares, com a origem de cada um (spec, enunciado, decisão da equipa ou resposta do docente)
+**Áreas do código tocadas:**
+- Frontend: `components/diagnostico.tsx` (novo), `lib/estado.ts` (novo: nota → estado, palavra e cor), `components/matriz-alavancas.tsx`, `app/page.tsx`, âncora em `app/artigos/page.tsx`
+- `docs/spec.md`: regra das cores e tabela do diagnóstico (secção "Páginas")
+- Backend: nenhum (as notas já vêm da API e estão testadas)
 
 **Critérios de aceitação:**
 
-- [ ] Cada limiar está na spec, com a origem.
-- [ ] A classificação vem da API (testada pela API com fixtures, como os outros indicadores); o frontend só pinta.
-- [ ] Um KPI sem limiar decidido fica sem cor.
-- [ ] A cor nunca é a única pista: número e palavra ("bom", "aceitável", "mau") ao lado.
+- [ ] Na Visão geral, o diagnóstico é a primeira coisa a seguir ao título: 4 cartões (dispersão dos artigos A, divididos evitáveis, dados das localizações, ligação encomenda ↔ picking), cada um com o valor, o estado (cor + palavra) e o que fazer, com ligação para o detalhe.
+- [ ] As cores seguem a regra única e vêm da nota da API; a cor nunca vai sozinha.
+- [ ] A matriz usa a mesma regra de cores (impacto 3 a vermelho).
+- [ ] Os indicadores sem meta ficam sem cor e rotulados "descritivos".
+- [ ] A spec tem a regra das cores e a tabela das ações.
 
-Referência: `docs/spec.md` (secção "Páginas", princípio "resumo primeiro, detalhe a pedido"; matriz das alavancas).
+**Validação (verificações manuais):**
+- Dataset completo: dispersão (a) 72,15 % vermelho; divididos evitáveis 7,74 % verde; localizações mapeadas 89,03 % amarelo; ligação 95,02 % verde com aviso "colado ao limiar".
+- As ligações abrem a secção certa (ranking de prioridade, pedidos divididos por período, qualidade) e mantêm os filtros.
+- Testes do backend continuam a passar.
+
+Referência: `docs/spec.md` (secção "Páginas", "Diagnóstico da Visão geral"; matriz em "Critérios de prioridade").

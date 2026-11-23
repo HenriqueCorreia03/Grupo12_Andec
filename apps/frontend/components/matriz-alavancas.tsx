@@ -1,4 +1,6 @@
+import { LegendaDasCores } from "@/components/diagnostico";
 import type { CriterioMedido, EsforcoMatriz, MatrizAlavancas, NotaMatriz } from "@/lib/api";
+import { COR_DO_ESTADO, type Criterio, estadoDaNota, palavraDaNota } from "@/lib/estado";
 
 /** O que a leitura precisa de cada alavanca: só as notas dos três critérios. */
 interface NotasDaAlavanca {
@@ -34,9 +36,9 @@ export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
           <section key={id} aria-label={nome} className="rounded-lg border border-stone-200 bg-stone-50 p-4">
             <h3 className="font-semibold">{nome}</h3>
             <dl className="mt-3 grid grid-cols-3 gap-3 text-sm">
-              <NotaGrande rotulo="Impacto" nota={alavanca.impacto.nota} detalhe={percentagem(alavanca.impacto.valor)} />
-              <NotaGrande rotulo="Robustez" nota={alavanca.robustez.nota} detalhe={percentagem(alavanca.robustez.valor)} />
-              <NotaGrande rotulo="Esforço" nota={alavanca.esforco.nota} detalhe={alavanca.esforco.rotulo} />
+              <NotaGrande rotulo="Impacto" criterio="impacto" nota={alavanca.impacto.nota} detalhe={percentagem(alavanca.impacto.valor)} />
+              <NotaGrande rotulo="Robustez" criterio="robustez" nota={alavanca.robustez.nota} detalhe={percentagem(alavanca.robustez.valor)} />
+              <NotaGrande rotulo="Esforço" criterio="esforco" nota={alavanca.esforco.nota} detalhe={alavanca.esforco.rotulo} />
             </dl>
             {alavanca.robustez.avisoLimiar && (
               <p className="mt-3 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">⚠ {alavanca.robustez.avisoLimiar}</p>
@@ -49,17 +51,12 @@ export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
         ))}
       </div>
       <p className="mt-3 text-sm text-stone-700">
-        <span className="font-medium">Leitura das notas</span> (3 = melhor em cada critério): {leitura(a, b)}
+        <span className="font-medium">Leitura das notas</span> (3 = mais espaço de melhoria, evidência mais robusta ou menor esforço): {leitura(a, b)}
       </p>
-      <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-600">
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-stone-600">
         <span>Cores pelos limiares da spec:</span>
-        {([3, 2, 1] as const).map((n) => (
-          <span key={n} className="flex items-center gap-1">
-            <span className={`inline-block h-3 w-3 rounded-sm border ${COR_DA_NOTA[n].fundo}`} />
-            {n} = {COR_DA_NOTA[n].palavra}
-          </span>
-        ))}
-      </p>
+        <LegendaDasCores />
+      </div>
 
       <details className="mt-4 rounded border border-stone-200 p-3">
         <summary className="cursor-pointer text-sm font-semibold">Justificações de cada nota</summary>
@@ -100,26 +97,31 @@ export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
 }
 
 /**
- * Cor de cada nota da matriz (ticket 19): a escala vem dos limiares da spec, devolvidos pela API, com 3 = melhor em
- * todos os critérios (no esforço, 3 = esforço baixo). A cor nunca vai sozinha: o número e o valor ficam ao lado.
+ * Nota 1–3 em destaque, com a cor do estado e o valor que a justifica por baixo. A regra de cores é a do diagnóstico
+ * (ticket 20): vermelho = precisa de ação, amarelo = atenção, verde = está bem; no impacto, 3 = muito a melhorar.
+ * A cor nunca vai sozinha: o número, o valor e a palavra ficam ao lado.
  */
-const COR_DA_NOTA: Record<NotaMatriz, { fundo: string; texto: string; palavra: string }> = {
-  3: { fundo: "border-emerald-300 bg-emerald-50", texto: "text-emerald-800", palavra: "melhor" },
-  2: { fundo: "border-amber-300 bg-amber-50", texto: "text-amber-800", palavra: "intermédia" },
-  1: { fundo: "border-rose-300 bg-rose-50", texto: "text-rose-800", palavra: "pior" },
-};
-
-/** Nota 1–3 em destaque, com a cor da escala e o valor que a justifica por baixo. */
-function NotaGrande({ rotulo, nota, detalhe }: { rotulo: string; nota: NotaMatriz | null; detalhe: string }) {
-  const cor = nota === null ? null : COR_DA_NOTA[nota];
+function NotaGrande({
+  rotulo,
+  criterio,
+  nota,
+  detalhe,
+}: {
+  rotulo: string;
+  criterio: Criterio;
+  nota: NotaMatriz | null;
+  detalhe: string;
+}) {
+  const cor = COR_DO_ESTADO[nota === null ? "semDados" : estadoDaNota(criterio, nota)];
+  const palavra = nota === null ? null : palavraDaNota(criterio, nota);
   return (
-    <div className={`rounded border px-2 py-1.5 ${cor ? cor.fundo : "border-stone-200 bg-white"}`}>
+    <div className={`rounded border px-2 py-1.5 ${cor.fundo}`}>
       <dt className="text-xs text-stone-600">{rotulo}</dt>
-      <dd title={cor ? `Nota ${nota} (${cor.palavra})` : "Sem nota"}>
-        <span className={`block text-4xl font-semibold leading-none ${cor ? cor.texto : ""}`}>{nota ?? "—"}</span>
+      <dd title={palavra ? `Nota ${nota} (${palavra})` : "Sem nota"}>
+        <span className={`block text-4xl font-semibold leading-none ${cor.texto}`}>{nota ?? "—"}</span>
         <span className="mt-1 block text-xs text-stone-700">
           {detalhe}
-          {cor && <span className="text-stone-500"> · {cor.palavra}</span>}
+          {palavra && <span className="text-stone-500"> · {palavra}</span>}
         </span>
       </dd>
     </div>

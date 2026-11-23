@@ -45,7 +45,7 @@ export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
       <Suspense fallback={CARREGAR}>
         <DrillDownAbc searchParams={searchParams} />
       </Suspense>
-      <h2 className="mt-10 text-lg font-semibold">Prioridade dos artigos e dispersão</h2>
+      <h2 id="prioridade" className="mt-10 scroll-mt-4 text-lg font-semibold">Prioridade dos artigos e dispersão</h2>
       <div className="mt-4">
         <Suspense fallback={CARREGAR}>
           <PrioridadeDoPeriodo searchParams={searchParams} />
