@@ -37,6 +37,7 @@ export async function EstabilidadeDoAbc({ filtros }: { filtros: FiltrosUrl }) {
             <span className="font-semibold">{formatarNumero(combinacoes.excluidas)}</span> de{" "}
             {formatarNumero(combinacoes.comUnidades)} ({percentagemExcluidas ?? "sem dados"}).
           </p>
+          <SensibilidadeAoLimiar linhas={corpo.sensibilidade} limiarPrincipal={limiar} />
         </CartaoIndicador>
 
         <div className="rounded-lg border border-stone-200 bg-white p-5">
@@ -121,5 +122,49 @@ export async function EstabilidadeDoAbc({ filtros }: { filtros: FiltrosUrl }) {
         </p>
       </div>
     </div>
+  );
+}
+
+/** Sensibilidade ao limiar mínimo de unidades (ticket 14): a % de mudanças e as exclusões com 5, 10 e 20 un. */
+function SensibilidadeAoLimiar({
+  linhas,
+  limiarPrincipal,
+}: {
+  linhas: EstabilidadeAbc["sensibilidade"];
+  limiarPrincipal: number;
+}) {
+  return (
+    <table className="mt-3 w-full text-sm">
+      <caption className="text-left text-xs font-medium text-stone-500">Sensibilidade ao limiar mínimo de unidades</caption>
+      <thead className="text-stone-500">
+        <tr>
+          <th className="py-1 text-left font-normal">Limiar</th>
+          <th className="py-1 text-right font-normal">Mudam de classe</th>
+          <th className="py-1 text-right font-normal">Combinações excluídas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {linhas.map((l) => (
+          <tr
+            key={l.limiarUnidades}
+            className={"border-t border-stone-100 " + (l.limiarUnidades === limiarPrincipal ? "font-semibold" : "")}
+          >
+            <td className="py-1">≥ {l.limiarUnidades} un.</td>
+            <td className="py-1 text-right">
+              {formatarPercentagemOuNulo(l.valor) ?? "sem dados"}{" "}
+              <span className="font-normal text-stone-500">
+                ({formatarNumero(l.mudaram)}/{formatarNumero(l.comparadas)})
+              </span>
+            </td>
+            <td className="py-1 text-right">
+              {formatarNumero(l.combinacoes.excluidas)} de {formatarNumero(l.combinacoes.comUnidades)}{" "}
+              <span className="font-normal text-stone-500">
+                ({formatarPercentagemOuNulo(l.combinacoes.percentagemExcluidas) ?? "sem dados"})
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

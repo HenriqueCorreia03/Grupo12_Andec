@@ -9,6 +9,9 @@ import type { Metadados } from './metadados';
 /** Combinações referência-mês com menos unidades do que isto ficam fora do denominador (spec). */
 const LIMIAR_UNIDADES = 10;
 
+/** Limiares da sensibilidade (ticket 14): a % de mudanças e as exclusões recalculadas para cada um. */
+const LIMIARES_SENSIBILIDADE = [5, 10, 20] as const;
+
 export interface MesDaReferencia {
   mes: string;
   /** Classe no ABC desse mês; nula sem unidades no mês ("sem procura no mês"). */
@@ -28,15 +31,27 @@ export interface TransicaoAbc {
   percentagem: number | null;
 }
 
-export interface EstabilidadeAbc extends Metadados {
+export interface CombinacoesExcluidas {
+  comUnidades: number;
+  excluidas: number;
+  percentagemExcluidas: number | null;
+}
+
+/** Estabilidade com um limiar mínimo de unidades: as comparações e as combinações referência-mês excluídas. */
+export interface EstabilidadeComLimiar {
   limiarUnidades: number;
-  meses: string[];
   transicoes: TransicaoAbc[];
   /** % de referências que mudam de classe entre meses consecutivos, sobre todas as transições; nula sem comparações. */
   valor: number | null;
   comparadas: number;
   mudaram: number;
-  combinacoes: { comUnidades: number; excluidas: number; percentagemExcluidas: number | null };
+  combinacoes: CombinacoesExcluidas;
+}
+
+export interface EstabilidadeAbc extends Metadados, EstabilidadeComLimiar {
+  meses: string[];
+  /** A mesma estabilidade com os limiares 5, 10 e 20 un. (ticket 14), por esta ordem; a de 10 un. é a principal. */
+  sensibilidade: Omit<EstabilidadeComLimiar, 'transicoes'>[];
   /** Referências do âmbito (classe global e referência do filtro), com a classe de cada mês. */
   referencias: { referencia: string; classeGlobal: ClasseAbc; meses: MesDaReferencia[] }[];
 }
@@ -83,36 +98,18 @@ export class EstabilidadeService {
       }),
     }));
 
-    const transicoes = meses.slice(1).map((para, i): TransicaoAbc => {
-      const de = meses[i];
-      let comparadas = 0;
-      let mudaram = 0;
-      for (const r of referencias) {
-        const [antes, depois] = [r.meses[i], r.meses[i + 1]];
-        if (antes.unidades < LIMIAR_UNIDADES || depois.unidades < LIMIAR_UNIDADES) continue;
-        comparadas++;
-        if (antes.classe !== depois.classe) mudaram++;
-      }
-      return { de, para, comparadas, mudaram, percentagem: comparadas === 0 ? null : (mudaram * 100) / comparadas };
+    const principal = estabilidadeComLimiar(meses, referencias, LIMIAR_UNIDADES);
+    const sensibilidade = LIMIARES_SENSIBILIDADE.map((limiar) => {
+      const resultado = estabilidadeComLimiar(meses, referencias, limiar);
+      const { limiarUnidades, valor, comparadas, mudaram, combinacoes } = resultado;
+      return { limiarUnidades, valor, comparadas, mudaram, combinacoes };
     });
-
-    const comparadas = transicoes.reduce((s, t) => s + t.comparadas, 0);
-    const mudaram = transicoes.reduce((s, t) => s + t.mudaram, 0);
-    const celulas = referencias.flatMap((r) => r.meses).filter((m) => m.unidades > 0);
-    const excluidas = celulas.filter((m) => m.excluida).length;
+    const { excluidas } = principal.combinacoes;
 
     return {
-      limiarUnidades: LIMIAR_UNIDADES,
+      ...principal,
       meses,
-      transicoes,
-      valor: comparadas === 0 ? null : (mudaram * 100) / comparadas,
-      comparadas,
-      mudaram,
-      combinacoes: {
-        comUnidades: celulas.length,
-        excluidas,
-        percentagemExcluidas: celulas.length === 0 ? null : (excluidas * 100) / celulas.length,
-      },
+      sensibilidade,
       referencias,
       definicao:
         'ABC mensal independente (mesma regra do ABC, sobre as unidades de cada mês). % de referências que mudam de ' +
@@ -122,8 +119,49 @@ export class EstabilidadeService {
       nota: 'Janeiro e outubro de 2023 são meses parciais.',
       fonte: 'Customer_Order',
       filtrosNaoAplicaveis: naoAplicaveis(filtros, 'CO'),
-      linhasConsideradas: celulas.length,
+      linhasConsideradas: principal.combinacoes.comUnidades,
       exclusoes: [{ motivo: `combinações referência-mês com < ${LIMIAR_UNIDADES} un.`, quantidade: excluidas }],
     };
   }
+}
+
+/**
+ * Comparações entre meses consecutivos com um limiar: só entram as referências com ≥ limiar un. nos dois meses, e
+ * as combinações referência-mês com unidades abaixo do limiar contam como excluídas.
+ */
+function estabilidadeComLimiar(
+  meses: string[],
+  referencias: { meses: MesDaReferencia[] }[],
+  limiar: number,
+): EstabilidadeComLimiar {
+  const transicoes = meses.slice(1).map((para, i): TransicaoAbc => {
+    const de = meses[i];
+    let comparadas = 0;
+    let mudaram = 0;
+    for (const r of referencias) {
+      const [antes, depois] = [r.meses[i], r.meses[i + 1]];
+      if (antes.unidades < limiar || depois.unidades < limiar) continue;
+      comparadas++;
+      if (antes.classe !== depois.classe) mudaram++;
+    }
+    return { de, para, comparadas, mudaram, percentagem: comparadas === 0 ? null : (mudaram * 100) / comparadas };
+  });
+
+  const comparadas = transicoes.reduce((s, t) => s + t.comparadas, 0);
+  const mudaram = transicoes.reduce((s, t) => s + t.mudaram, 0);
+  const celulas = referencias.flatMap((r) => r.meses).filter((m) => m.unidades > 0);
+  const excluidas = celulas.filter((m) => m.unidades < limiar).length;
+
+  return {
+    limiarUnidades: limiar,
+    transicoes,
+    valor: comparadas === 0 ? null : (mudaram * 100) / comparadas,
+    comparadas,
+    mudaram,
+    combinacoes: {
+      comUnidades: celulas.length,
+      excluidas,
+      percentagemExcluidas: celulas.length === 0 ? null : (excluidas * 100) / celulas.length,
+    },
+  };
 }

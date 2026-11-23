@@ -9,6 +9,13 @@ import { crlf, type FixtureFiles, lf } from '../support/fixture-files';
  * - março: R1 A (0 %), R2 A (60 %), R3 B (90 %).
  * Janeiro → fevereiro: comparadas R1 e R2, muda R2 (B → A) → 50 %. Fevereiro → março: 3 comparadas, 0 mudam.
  * Total: 1 em 5 = 20 %. Combinações com unidades: 9; excluídas: 1 (11,11 %).
+ * Sensibilidade (ticket 14), com "≥ limiar" para entrar nas comparações:
+ * - 5 un.: nenhuma excluída (0 de 9). Jan → fev: 3 comparadas, mudam R2 (B → A) e R3 (C → B); fev → mar: 3, 0 mudam.
+ *   Total: 2 em 6 = 33,33 %.
+ * - 10 un.: como acima, 1 em 5 = 20 %; excluídas 1 de 9 (11,11 %).
+ * - 20 un.: excluídas jan R2 (15), jan R3 (5), fev R3 (10) e mar R3 (10) = 4 de 9 (44,44 %); fev R1 tem 20 un. e entra.
+ *   Jan → fev: só R1 (A → A); fev → mar: R1 e R2 (A → A). Total: 0 em 3 = 0 %.
+ *   Só fevereiro e março: 2 comparadas, 0 mudam; combinações 6, excluídas 2 (fev R3, mar R3).
  */
 const CO = (pedido: string, ref: string, qtd: number, data: string, onda: string) =>
   `C0000001;${pedido};1;${ref};9;${qtd};${data};${onda};Operator_1`;

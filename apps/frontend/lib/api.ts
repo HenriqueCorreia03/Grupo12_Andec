@@ -414,6 +414,13 @@ export function obterPrioridade(filtros: FiltrosUrl = {}): Promise<PrioridadeDos
   return obter(`/api/artigos/prioridade${consulta(filtros)}`);
 }
 
+/** Combinações referência-mês com unidades e quantas ficam abaixo do limiar (excluídas das comparações). */
+export interface CombinacoesExcluidas {
+  comUnidades: number;
+  excluidas: number;
+  percentagemExcluidas: number | null;
+}
+
 /** Contrato de GET /api/artigos/estabilidade (ticket 10): ABC mensal com o limiar de unidades. */
 export interface EstabilidadeAbc extends MetadadosIndicador {
   limiarUnidades: number;
@@ -422,7 +429,15 @@ export interface EstabilidadeAbc extends MetadadosIndicador {
   valor: number | null;
   comparadas: number;
   mudaram: number;
-  combinacoes: { comUnidades: number; excluidas: number; percentagemExcluidas: number | null };
+  combinacoes: CombinacoesExcluidas;
+  /** Mesma estabilidade com os limiares 5, 10 e 20 un. (ticket 14), por esta ordem; a de 10 un. é a principal. */
+  sensibilidade: {
+    limiarUnidades: number;
+    valor: number | null;
+    comparadas: number;
+    mudaram: number;
+    combinacoes: CombinacoesExcluidas;
+  }[];
   referencias: {
     referencia: string;
     classeGlobal: ClasseAbc;
