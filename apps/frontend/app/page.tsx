@@ -21,8 +21,7 @@ export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
     <section>
       <h1 className="text-2xl font-semibold">Visão geral</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Indicadores calculados no servidor a partir dos CSV carregados pelo ETL. Passe o rato por um cartão para ver a
-        definição.
+        Indicadores calculados no servidor a partir dos CSV carregados pelo ETL. Clique num cartão para ver a definição.
       </p>
       <div className="mt-6">
         <Suspense fallback={<div className="h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>

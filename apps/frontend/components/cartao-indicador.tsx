@@ -1,4 +1,6 @@
-import { useId, type ReactNode } from "react";
+"use client";
+
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import type { Comparacao, MetadadosIndicador } from "@/lib/api";
 import { formatarData, formatarNumero, formatarVariacao } from "@/lib/formatar";
 
@@ -14,18 +16,65 @@ interface Props {
 
 /**
  * Cartão de um indicador. Só apresenta: os valores vêm calculados pela API.
- * Ao passar o rato (ou com o foco do teclado) mostra o tooltip com a definição, o valor,
- * a variação face ao período anterior, a fonte, a nota e as linhas excluídas com o motivo.
+ * Ao clicar no cartão (ou no botão "ⓘ", para o teclado) abre a definição, o valor, a variação face ao período
+ * anterior, a fonte, a nota e as linhas excluídas com o motivo. Fecha com um novo clique, com Esc ou ao clicar fora.
+ * Não depende do rato: funciona igual num ecrã tátil.
  */
 export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, children }: Props) {
   const tooltipId = useId();
+  const [aberto, setAberto] = useState(false);
+  const cartao = useRef<HTMLElement>(null);
+
+  // Com o cartão aberto, um clique fora ou a tecla Esc fecham-no.
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (evento: globalThis.MouseEvent) => {
+      if (cartao.current && !cartao.current.contains(evento.target as Node)) setAberto(false);
+    };
+    const escape = (evento: globalThis.KeyboardEvent) => {
+      if (evento.key === "Escape") setAberto(false);
+    };
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [aberto]);
+
+  // Um clique numa ligação, botão ou campo dentro do cartão faz o que tem de fazer e não abre a definição.
+  function aoClicar(evento: MouseEvent<HTMLElement>) {
+    if ((evento.target as HTMLElement).closest("a, button, input, select, textarea, summary")) return;
+    setAberto((valor) => !valor);
+  }
+
+  function aoCarregar(evento: KeyboardEvent<HTMLElement>) {
+    if (evento.key === "Escape") setAberto(false);
+  }
+
   return (
     <article
-      tabIndex={0}
-      aria-describedby={tooltipId}
-      className="group relative rounded-lg border border-stone-200 bg-white p-5 shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+      ref={cartao}
+      onClick={aoClicar}
+      onKeyDown={aoCarregar}
+      className={`relative cursor-pointer rounded-lg border bg-white p-5 shadow-sm transition-colors ${
+        aberto ? "border-stone-900" : "border-stone-200 hover:border-stone-400"
+      }`}
     >
-      <h2 className="text-sm font-medium text-stone-500">{titulo}</h2>
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="text-sm font-medium text-stone-500">{titulo}</h2>
+        <button
+          type="button"
+          onClick={() => setAberto((valor) => !valor)}
+          aria-expanded={aberto}
+          aria-controls={tooltipId}
+          aria-label={`Definição de ${titulo}`}
+          title="Ver a definição"
+          className="-mr-1 -mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-stone-300 text-xs text-stone-600 hover:border-stone-500 hover:text-stone-900 focus-visible:ring-2 focus-visible:ring-stone-400"
+        >
+          i
+        </button>
+      </div>
       {children}
       <p className="mt-3 text-xs text-stone-500">Fonte: {metadados.fonte}</p>
       {metadados.filtrosNaoAplicaveis.length > 0 && (
@@ -36,17 +85,19 @@ export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, chi
       {limitacao && (
         <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">{limitacao}</p>
       )}
-      <TooltipIndicador id={tooltipId} metadados={metadados} valorResumo={valorResumo} />
+      <TooltipIndicador id={tooltipId} aberto={aberto} metadados={metadados} valorResumo={valorResumo} />
     </article>
   );
 }
 
 function TooltipIndicador({
   id,
+  aberto,
   metadados,
   valorResumo,
 }: {
   id: string;
+  aberto: boolean;
   metadados: MetadadosIndicador;
   valorResumo: string | null;
 }) {
@@ -54,8 +105,10 @@ function TooltipIndicador({
   return (
     <div
       id={id}
-      role="tooltip"
-      className="invisible absolute left-0 right-0 top-full z-10 mt-2 rounded-md bg-stone-900 p-3 text-xs leading-relaxed text-stone-100 opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100 group-focus-visible:visible group-focus-visible:opacity-100"
+      role="region"
+      aria-label="Definição do indicador"
+      hidden={!aberto}
+      className="absolute left-0 right-0 top-full z-10 mt-2 cursor-default rounded-md bg-stone-900 p-3 text-xs leading-relaxed text-stone-100 shadow-lg"
     >
       <p>{metadados.definicao}</p>
       <p className="mt-1">Valor: {valorResumo ?? "sem dados"}</p>
