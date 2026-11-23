@@ -1,5 +1,6 @@
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
+import { BarraParteTodo } from "@/components/mini-graficos";
 import { obterOndasIncompletas, type OndasIncompletas } from "@/lib/api";
 import type { FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
@@ -19,11 +20,22 @@ export async function OndasIncompletasCartao({ filtros }: { filtros: FiltrosUrl 
       titulo="Ondas incompletas simultâneas"
       metadados={dados}
       valorResumo={valor}
+      grafico={
+        semDados ? null : (
+          <BarraParteTodo
+            parte={dados.ondasSimultaneas}
+            todo={dados.ondasIncompletas}
+            classe="bg-amber-500"
+            titulo={`${formatarNumero(dados.ondasIncompletas)} ondas incompletas (menos de 24 un.)`}
+            rotuloParte="criadas à mesma hora que outra incompleta"
+            rotuloResto="sozinhas na sua hora"
+          />
+        )
+      }
       leitura={
         semDados
           ? null
-          : `De ${formatarNumero(dados.ondasIncompletas)} ondas com menos de 24 un. (${formatarPercentagemOuNulo(dados.percentagemIncompletas)} das ondas), ` +
-            `em ${formatarNumero(dados.gruposDiaHora)} combinações de dia e hora; envolvem ${formatarNumero(dados.pedidosDivididosEnvolvidos)} pedidos partidos.`
+          : `Em ${formatarNumero(dados.gruposDiaHora)} combinações de dia e hora; envolvem ${formatarNumero(dados.pedidosDivididosEnvolvidos)} pedidos divididos entre ondas.`
       }
     >
       <ValorIndicador texto={valor} unidade="ondas" />

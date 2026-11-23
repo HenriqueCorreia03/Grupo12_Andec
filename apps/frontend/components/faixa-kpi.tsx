@@ -32,11 +32,14 @@ export function CartaoResumo({
   valor,
   unidade,
   leitura,
+  grafico,
 }: {
   titulo: string;
   valor: string | null;
   unidade?: string;
   leitura?: string | null;
+  /** Mini-gráfico do cartão (parte de um todo). */
+  grafico?: ReactNode;
 }) {
   return (
     <article className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
@@ -49,6 +52,7 @@ export function CartaoResumo({
           {unidade && <span className="ml-1 text-base font-normal text-stone-500">{unidade}</span>}
         </p>
       )}
+      {grafico}
       {leitura && <p className="mt-1 text-sm text-stone-600">{leitura}</p>}
     </article>
   );

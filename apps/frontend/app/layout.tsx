@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { BotaoTema } from "@/components/botao-tema";
 import { Navegacao } from "@/components/navegacao";
 import { PainelFiltros } from "@/components/painel-filtros";
 import "./globals.css";
@@ -15,12 +16,26 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-PT" className="h-full antialiased">
+    // suppressHydrationWarning: o script do <head> pode pôr a classe "escuro" antes de o React hidratar.
+    <html lang="pt-PT" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        {/* Aplica o modo (escolhido ou o do sistema) antes de desenhar a página, para não piscar branco. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('tema');if(t?t==='escuro':matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('escuro')}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
-        <header className="border-b border-stone-200 bg-white">
-          <div className="mx-auto max-w-6xl px-6 py-4">
-            <p className="text-sm text-stone-500">Armazém de calçado</p>
-            <p className="text-lg font-semibold">Prioridades de operação</p>
+        {/* O cabeçalho e os filtros ficam parados durante as transições (ver globals.css). */}
+        <header className="border-b border-stone-200 bg-white" style={{ viewTransitionName: "cabecalho" }}>
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
+            <div>
+              <p className="text-sm text-stone-500">Armazém de calçado</p>
+              <p className="text-lg font-semibold">Prioridades de operação</p>
+            </div>
+            <BotaoTema />
           </div>
           {/* Os dois leem o URL (useSearchParams): precisam de um limite de Suspense. */}
           <Suspense fallback={<div className="h-10" />}>
@@ -30,7 +45,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <PainelFiltros />
           </Suspense>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+          {children}
+        </main>
       </body>
     </html>
   );

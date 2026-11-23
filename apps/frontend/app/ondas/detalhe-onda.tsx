@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ErroApi } from "@/components/erro-api";
+import { Onda24 } from "@/components/mini-graficos";
 import { TabelaRecolhida } from "@/components/tabela-recolhida";
 import { obterDetalheOnda, type DetalheOnda } from "@/lib/api";
 import { consulta, type FiltrosUrl } from "@/lib/filtros";
@@ -54,6 +55,12 @@ export async function DetalheDaOnda({ onda, filtros }: { onda: string; filtros: 
         <Facto rotulo="Ocupação" valor={formatarPercentagemOuNulo(detalhe.ocupacao) ?? "sem picking"} />
         <Facto rotulo="Localizações" valor={formatarNumero(detalhe.localizacoes.length)} />
       </dl>
+      {detalhe.unidadesRecolhidas !== null && (
+        <div className="mt-3 text-sm">
+          <Onda24 unidades={detalhe.unidadesRecolhidas} grande />
+          <span className="ml-2 text-stone-500">unidades recolhidas nesta onda, para um alvo de 24</span>
+        </div>
+      )}
 
       <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section>

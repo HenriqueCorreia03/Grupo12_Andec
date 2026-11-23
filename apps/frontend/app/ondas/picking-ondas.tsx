@@ -1,4 +1,5 @@
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
+import { BarraSegmentos, Onda24 } from "@/components/mini-graficos";
 import { ErroApi } from "@/components/erro-api";
 import Link from "next/link";
 import { obterPicking, type OcupacaoDasOndas, type OndaPicking, type PickingDasOndas } from "@/lib/api";
@@ -28,11 +29,17 @@ export async function CartoesDePicking({ filtros }: { filtros: FiltrosUrl }) {
         titulo="Ocupação média das ondas"
         metadados={ocupacao}
         valorResumo={valorOcupacao}
-        leitura={
-          `${formatarNumero(ocupacao.ondasCom24)} de ${formatarNumero(ocupacao.ondas)} ondas saem com 24 un. certas ` +
-          `(${formatarPercentagemOuNulo(ocupacao.percentagemCom24) ?? "sem dados"}) e ${formatarNumero(ocupacao.ondasMaisDe24)} com mais de 24; ` +
-          `a mais pequena leva ${formatarNumeroOuNulo(ocupacao.minimo) ?? "-"} un. e a maior ${formatarNumeroOuNulo(ocupacao.maximo) ?? "-"}.`
+        grafico={
+          <BarraSegmentos
+            titulo={`${formatarNumero(ocupacao.ondas)} ${ocupacao.ondas === 1 ? "onda" : "ondas"}`}
+            segmentos={[
+              { valor: ocupacao.ondas - ocupacao.ondasCom24 - ocupacao.ondasMaisDe24, rotulo: "incompletas (menos de 24 un.)", classe: "bg-amber-500" },
+              { valor: ocupacao.ondasCom24, rotulo: "com 24 un. certas", classe: "bg-[#2a78d6]" },
+              { valor: ocupacao.ondasMaisDe24, rotulo: "com mais de 24 un.", classe: "bg-stone-500" },
+            ]}
+          />
         }
+        leitura={`A mais pequena leva ${formatarNumeroOuNulo(ocupacao.minimo) ?? "-"} un. e a maior ${formatarNumeroOuNulo(ocupacao.maximo) ?? "-"}.`}
       >
         <ValorIndicador texto={valorOcupacao} unidade="de 24 un." />
       </CartaoIndicador>
@@ -202,7 +209,10 @@ function ListaDeOndas({
                 </td>
                 <td className="whitespace-nowrap px-4 py-1.5 text-stone-500">{o.data ? `${o.data} ${o.hora ?? ""}` : "—"}</td>
                 <td className="px-4 py-1.5 text-right">{formatarNumero(o.unidades)}</td>
-                <td className="px-4 py-1.5 text-right">{formatarPercentagemOuNulo(o.ocupacao)}</td>
+                <td className="whitespace-nowrap px-4 py-1.5 text-right">
+                  <Onda24 unidades={o.unidades} />
+                  <span className="ml-2 text-stone-500">{formatarPercentagemOuNulo(o.ocupacao)}</span>
+                </td>
                 <td className="px-4 py-1.5 text-right">{formatarNumero(o.localizacoes)}</td>
               </tr>
             ))}

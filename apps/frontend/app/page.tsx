@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { OutrasDecisoes } from "@/components/decisoes";
 import { Diagnostico } from "@/components/diagnostico";
+import { BarraParteTodo, BarraSegmentos } from "@/components/mini-graficos";
 import { ErroApi } from "@/components/erro-api";
 import { FaixaKpi, FaixaKpiACarregar } from "@/components/faixa-kpi";
 import { MatrizAlavancasView } from "@/components/matriz-alavancas";
@@ -34,7 +35,9 @@ export const metadata: Metadata = { title: { absolute: "Visão geral · Armazém
  * mal e o que fazer, e a faixa dos indicadores da operação; (2) matriz das alavancas; (3) evolução mensal.
  */
 export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
+  // Fade curto só ao entrar e sair da página (não a cada bloco de dados que carrega): ver globals.css.
   return (
+    <ViewTransition enter="troca" exit="troca" default="none">
     <section>
       <h1 className="text-2xl font-semibold">Visão geral</h1>
       <p className="mt-1 text-sm text-stone-500">
@@ -74,6 +77,7 @@ export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
         </Suspense>
       </div>
     </section>
+    </ViewTransition>
   );
 }
 
@@ -161,10 +165,17 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
           titulo="Pedidos por onda"
           metadados={pedidosPorOnda}
           valorResumo={porOnda}
-          leitura={
-            `${formatarNumero(pedidosPorOnda.ondasComUmPedido)} de ${formatarNumero(pedidosPorOnda.ondas)} ondas com 1 só ` +
-            `pedido; mediana ${formatarNumeroOuNulo(pedidosPorOnda.mediana) ?? "sem dados"}.`
+          grafico={
+            <BarraParteTodo
+              parte={pedidosPorOnda.ondasComUmPedido}
+              todo={pedidosPorOnda.ondas}
+              classe="bg-[#2a78d6]"
+              titulo={`${formatarNumero(pedidosPorOnda.ondas)} ondas`}
+              rotuloParte="levam 1 só pedido"
+              rotuloResto="levam 2 ou mais pedidos"
+            />
           }
+          leitura={`Mediana: ${formatarNumeroOuNulo(pedidosPorOnda.mediana) ?? "sem dados"} pedidos por onda.`}
         >
           <ValorIndicador texto={porOnda} unidade="pedidos/onda" />
         </CartaoIndicador>
@@ -203,7 +214,17 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
           leitura={
             abc.totalReferencias === 0
               ? null
-              : `Unidades: ${abc.classes.map((c) => `${c.classe} ${formatarPercentagemOuNulo(c.percentagemUnidades) ?? "sem dados"}`).join(" · ")}. Clique numa classe para ver as referências.`
+              : "Clique numa classe para ver os artigos."
+          }
+          grafico={
+            <BarraSegmentos
+              titulo="Unidades encomendadas, por classe"
+              segmentos={abc.classes.map((c) => ({
+                valor: c.unidades,
+                rotulo: `classe ${c.classe} (${formatarNumero(c.referencias)} artigos, ${formatarPercentagemOuNulo(c.percentagemUnidades) ?? "sem dados"})`,
+                classe: c.classe === "A" ? "bg-[#2a78d6]" : c.classe === "B" ? "bg-[#86b6ef]" : "bg-stone-300",
+              }))}
+            />
           }
         >
           <p className="mt-2 flex flex-wrap gap-x-4 text-3xl font-semibold">

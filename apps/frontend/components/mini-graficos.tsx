@@ -130,3 +130,101 @@ export function MiniBarras({
     </div>
   );
 }
+
+/**
+ * Barra com várias partes no seu tamanho real (por exemplo, as classes A, B e C) e, por baixo, cada parte com o seu
+ * número. A ordem e as cores vêm de quem a usa.
+ */
+export function BarraSegmentos({
+  titulo,
+  segmentos,
+}: {
+  titulo: string;
+  segmentos: { valor: number; rotulo: string; classe: string }[];
+}) {
+  const total = segmentos.reduce((soma, s) => soma + s.valor, 0);
+  if (total <= 0) return null;
+  const formatar = (v: number) =>
+    new Intl.NumberFormat("pt-PT", { useGrouping: "always" }).format(v);
+  return (
+    <figure
+      className="mt-3"
+      aria-label={`${titulo}: ${segmentos.map((s) => `${formatar(s.valor)} ${s.rotulo}`).join("; ")}`}
+    >
+      <figcaption className="text-xs text-stone-600">{titulo}</figcaption>
+      <div className="mt-1 flex h-4 overflow-hidden rounded" aria-hidden="true">
+        {segmentos.map((s) => (
+          <span
+            key={s.rotulo}
+            className={s.classe}
+            style={{ width: `${(s.valor / total) * 100}%` }}
+          />
+        ))}
+      </div>
+      <ul
+        className="mt-1.5 space-y-0.5 text-xs leading-snug"
+        aria-hidden="true"
+      >
+        {segmentos.map((s) => (
+          <li key={s.rotulo} className="flex items-baseline gap-1.5">
+            <span
+              className={`inline-block h-2.5 w-2.5 shrink-0 rounded-sm ${s.classe}`}
+            />
+            <span className="font-semibold text-stone-900">
+              {formatar(s.valor)}
+            </span>
+            <span className="text-stone-600">{s.rotulo}</span>
+          </li>
+        ))}
+      </ul>
+    </figure>
+  );
+}
+
+/**
+ * Uma onda como 24 lugares (a capacidade de referência): um quadrado por unidade recolhida, até 24. A laranja se a
+ * onda está incompleta, a azul com 24 certas e a cinzento acima de 24 (o excesso aparece como "+n").
+ */
+export function Onda24({
+  unidades,
+  grande = false,
+}: {
+  unidades: number;
+  grande?: boolean;
+}) {
+  const CAPACIDADE = 24;
+  const cheios = Math.min(unidades, CAPACIDADE);
+  const excesso = Math.max(0, unidades - CAPACIDADE);
+  const cor =
+    unidades < CAPACIDADE
+      ? "bg-amber-500"
+      : unidades === CAPACIDADE
+        ? "bg-[#2a78d6]"
+        : "bg-stone-500";
+  const lado = grande ? "h-3.5 w-3.5" : "h-2 w-2";
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 align-middle"
+      title={`${unidades} de ${CAPACIDADE} unidades`}
+      aria-label={`${unidades} de ${CAPACIDADE} unidades`}
+    >
+      <span
+        className={`grid grid-cols-12 ${grande ? "gap-[3px]" : "gap-px"}`}
+        aria-hidden="true"
+      >
+        {Array.from({ length: CAPACIDADE }, (_, i) => (
+          <span
+            key={i}
+            className={`${lado} rounded-[1px] ${i < cheios ? cor : "bg-stone-200"}`}
+          />
+        ))}
+      </span>
+      <span className="tabular-nums" aria-hidden="true">
+        {unidades}/{CAPACIDADE}
+        {excesso > 0 && (
+          <span className="ml-0.5 text-stone-500">(+{excesso})</span>
+        )}
+      </span>
+    </span>
+  );
+}

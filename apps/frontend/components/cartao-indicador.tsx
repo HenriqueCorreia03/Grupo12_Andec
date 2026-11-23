@@ -16,6 +16,8 @@ interface Props {
    * sem conclusões escritas à mão.
    */
   leitura?: string | null;
+  /** Mini-gráfico do cartão (parte de um todo), entre o valor e a leitura. */
+  grafico?: ReactNode;
   children: ReactNode;
 }
 
@@ -25,7 +27,7 @@ interface Props {
  * anterior, a fonte, a nota e as linhas excluídas com o motivo. Fecha com um novo clique, com Esc ou ao clicar fora.
  * Não depende do rato: funciona igual num ecrã tátil.
  */
-export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, leitura, children }: Props) {
+export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, leitura, grafico, children }: Props) {
   const tooltipId = useId();
   const [aberto, setAberto] = useState(false);
   const cartao = useRef<HTMLElement>(null);
@@ -81,6 +83,7 @@ export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, lei
         </button>
       </div>
       {children}
+      {grafico}
       {leitura && <p className="mt-1 text-sm text-stone-600">{leitura}</p>}
       {metadados.filtrosNaoAplicaveis.length > 0 && (
         <p className="mt-2 rounded border border-stone-300 bg-stone-100 px-2 py-1 text-xs text-stone-700">

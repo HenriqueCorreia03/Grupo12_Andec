@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
 import { FaixaKpi, FaixaKpiACarregar } from "@/components/faixa-kpi";
 import { CurvaAbc, type PontoAbc } from "@/components/graficos";
+import { BarraParteTodo, BarraSegmentos } from "@/components/mini-graficos";
 import { TabelaRecolhida } from "@/components/tabela-recolhida";
 import {
   obterAbc,
@@ -30,7 +31,9 @@ const CARREGAR = <div className="mt-6 h-64 animate-pulse rounded-lg border borde
 export const metadata: Metadata = { title: "Artigos, ABC e localizações" };
 
 export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
+  // Fade curto só ao entrar e sair da página (não a cada bloco de dados que carrega): ver globals.css.
   return (
+    <ViewTransition enter="troca" exit="troca" default="none">
     <section>
       <h1 className="text-2xl font-semibold">Artigos, ABC e localizações</h1>
       <p className="mt-1 text-sm text-stone-500">
@@ -71,6 +74,7 @@ export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
         </Suspense>
       </div>
     </section>
+    </ViewTransition>
   );
 }
 
@@ -126,10 +130,17 @@ async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps
         titulo="Artigos A (classe global)"
         metadados={prioridade}
         valorResumo={formatarNumero(resumoA.artigosA)}
-        leitura={
-          `${formatarNumero(resumoA.artigosAComPicking)} deles foram recolhidos` +
-          (medianaLocalizacoes ? `; cada um sai, em mediana, de ${medianaLocalizacoes} sítios diferentes.` : ".")
+        grafico={
+          <BarraParteTodo
+            parte={classeA?.referencias ?? resumoA.artigosA}
+            todo={abc.totalReferencias}
+            classe="bg-[#2a78d6]"
+            titulo={`${formatarNumero(abc.totalReferencias)} artigos encomendados`}
+            rotuloParte="são A"
+            rotuloResto="são B ou C"
+          />
         }
+        leitura={medianaLocalizacoes ? `Cada artigo A sai, em mediana, de ${medianaLocalizacoes} sítios diferentes.` : null}
       >
         <ValorIndicador texto={formatarNumero(resumoA.artigosA)} unidade="artigos" />
       </CartaoIndicador>
@@ -138,10 +149,15 @@ async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps
         titulo="Unidades na classe A (no período)"
         metadados={abc}
         valorResumo={percentagemA}
-        leitura={
-          classeA
-            ? `${formatarNumero(classeA.referencias)} dos ${formatarNumero(abc.totalReferencias)} artigos encomendados no período são A.`
-            : null
+        grafico={
+          <BarraSegmentos
+            titulo="Unidades encomendadas, por classe"
+            segmentos={abc.classes.map((c) => ({
+              valor: c.unidades,
+              rotulo: `classe ${c.classe} (${formatarNumero(c.referencias)} artigos)`,
+              classe: c.classe === "A" ? "bg-[#2a78d6]" : c.classe === "B" ? "bg-[#86b6ef]" : "bg-stone-300",
+            }))}
+          />
         }
       >
         <ValorIndicador texto={percentagemA} unidade="das unidades" />
@@ -151,10 +167,17 @@ async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps
         titulo="Referências que mudam de classe (mês a mês)"
         metadados={estabilidade}
         valorResumo={mudam}
-        leitura={
-          `${formatarNumero(estabilidade.mudaram)} mudanças em ${formatarNumero(estabilidade.comparadas)} comparações de um mês para o seguinte ` +
-          `(só artigos com ${estabilidade.limiarUnidades} ou mais unidades nos dois meses).`
+        grafico={
+          <BarraParteTodo
+            parte={estabilidade.mudaram}
+            todo={estabilidade.comparadas}
+            classe="bg-[#2a78d6]"
+            titulo={`${formatarNumero(estabilidade.comparadas)} comparações de um artigo de um mês para o seguinte`}
+            rotuloParte="mudou de classe"
+            rotuloResto="ficou na mesma classe"
+          />
         }
+        leitura={`Só artigos com ${estabilidade.limiarUnidades} ou mais unidades nos dois meses.`}
       >
         <ValorIndicador texto={mudam} />
       </CartaoIndicador>
@@ -163,7 +186,16 @@ async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps
         titulo="Localizações não mapeadas"
         metadados={zonas.participacaoPorZona}
         valorResumo={percentagemNaoMapeadas}
-        leitura={`${formatarNumero(naoMapeadas.unidades)} unidades saíram de sítios fora do mapa; ${formatarNumero(naoMapeadas.rc01Unidades)} delas da área RC-01.`}
+        grafico={
+          <BarraSegmentos
+            titulo={`${formatarNumero(zonas.participacaoPorZona.zonas.reduce((s, z) => s + z.unidades, 0) + naoMapeadas.unidades)} unidades recolhidas`}
+            segmentos={[
+              { valor: zonas.participacaoPorZona.zonas.reduce((s, z) => s + z.unidades, 0), rotulo: "em sítios que estão no mapa", classe: "bg-stone-300" },
+              { valor: naoMapeadas.rc01Unidades, rotulo: "na área RC-01 (fora do mapa)", classe: "bg-amber-500" },
+              { valor: naoMapeadas.unidades - naoMapeadas.rc01Unidades, rotulo: "noutros sítios fora do mapa", classe: "bg-amber-300" },
+            ]}
+          />
+        }
       >
         <ValorIndicador texto={percentagemNaoMapeadas} unidade="do recolhido" />
       </CartaoIndicador>
@@ -172,7 +204,16 @@ async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps
         titulo="Pedidos multizona"
         metadados={multizona}
         valorResumo={percentagemMultizona}
-        leitura={`${formatarNumero(multizona.pedidosMultizona)} de ${formatarNumero(multizona.pedidosValidos)} pedidos obrigam a ir a 2 ou mais zonas do armazém.`}
+        grafico={
+          <BarraParteTodo
+            parte={multizona.pedidosMultizona}
+            todo={multizona.pedidosValidos}
+            classe="bg-[#2a78d6]"
+            titulo={`${formatarNumero(multizona.pedidosValidos)} pedidos`}
+            rotuloParte="obrigam a ir a 2 ou mais zonas"
+            rotuloResto="ficam numa só zona"
+          />
+        }
       >
         <ValorIndicador texto={percentagemMultizona} unidade="dos pedidos" />
       </CartaoIndicador>
@@ -372,7 +413,7 @@ async function PainelTamanhos({ referencia, filtros }: { referencia: string; fil
   const maximo = Math.max(...tamanhos.tamanhos.map((t) => t.unidades));
   return (
     <aside className="h-fit rounded-lg border border-stone-200 bg-white p-5">
-      <h2 className="text-sm font-medium text-stone-500">Unidades por tamanho</h2>
+      <h2 className="text-sm font-medium text-stone-500">Unidades por tamanho (número do sapato)</h2>
       <p className="mt-1 text-lg font-semibold">
         {tamanhos.referencia}{" "}
         <span className="text-sm font-normal text-stone-500">
@@ -394,7 +435,7 @@ async function PainelTamanhos({ referencia, filtros }: { referencia: string; fil
       {tamanhos.tamanhos.some((t) => t.escalaPorConfirmar) && (
         <p className="mt-3 text-xs text-stone-500">* Escala de tamanhos 215–305 mantida sem interpretação (por confirmar).</p>
       )}
-      <p className="mt-3 text-xs text-stone-500">Tamanhos normalizados (por exemplo, 95 → 9,5). Fonte: Customer_Order.</p>
+      <p className="mt-3 text-xs text-stone-500">O tamanho é o número do sapato, tal como vem nas encomendas (escrito 95 no ficheiro = número 9,5). Os dados não dizem em que sistema de numeração está.</p>
     </aside>
   );
 }
