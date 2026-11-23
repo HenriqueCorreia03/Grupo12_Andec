@@ -7,7 +7,7 @@ import type {
 import { consulta, type FiltrosUrl } from "@/lib/filtros";
 import type { ReactNode } from "react";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
-import { Grelha100, MiniBarras } from "./mini-graficos";
+import { BarraParteTodo, MiniBarras } from "./mini-graficos";
 
 const MES_CURTO = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 const AZUL = "bg-[#2a78d6]";
@@ -34,6 +34,8 @@ interface Decisao {
   unidadeDoDestaque: string;
   /** Mini-gráfico para ler o cartão sem ler o texto. */
   grafico?: ReactNode;
+  /** Quando o gráfico já diz o mesmo que a frase de leitura, a frase não se mostra. */
+  semLeitura?: boolean;
   leitura: string;
   decisao: string;
   ligacao: { texto: string; pagina: string; ancora?: string };
@@ -61,7 +63,17 @@ export function OutrasDecisoes({
   const decisoes: Decisao[] = [
     {
       id: "estabilidade",
-      grafico: <Grelha100 percentagem={estabilidade.valor} classe={AZUL} legenda="artigos mudam de classe de um mês para o seguinte" />,
+      grafico: (
+        <BarraParteTodo
+          parte={estabilidade.mudaram}
+          todo={estabilidade.comparadas}
+          classe={AZUL}
+          titulo={`${formatarNumero(estabilidade.comparadas)} comparações de um artigo de um mês para o seguinte`}
+          rotuloParte="mudou de classe"
+          rotuloResto="ficou na mesma classe"
+        />
+      ),
+      semLeitura: true,
       pergunta: "Reorganizar uma vez, ou rever as localizações periodicamente?",
       destaque: formatarPercentagemOuNulo(estabilidade.valor) ?? "sem dados",
       unidadeDoDestaque:
@@ -105,10 +117,13 @@ export function OutrasDecisoes({
     {
       id: "agrupar",
       grafico: (
-        <Grelha100
-          percentagem={incompletas.ondasIncompletas === 0 ? null : (incompletas.ondasSimultaneas * 100) / incompletas.ondasIncompletas}
+        <BarraParteTodo
+          parte={incompletas.ondasSimultaneas}
+          todo={incompletas.ondasIncompletas}
           classe={AZUL}
-          legenda="ondas incompletas saíram à mesma hora que outra incompleta"
+          titulo={`${formatarNumero(incompletas.ondasIncompletas)} ondas incompletas (menos de 24 un.)`}
+          rotuloParte="criadas à mesma hora que outra incompleta"
+          rotuloResto="sozinhas na sua hora"
         />
       ),
       pergunta: "Há ondas incompletas (menos de 24 un.) que podiam ter saído juntas?",
@@ -150,7 +165,7 @@ export function OutrasDecisoes({
               )}
             </p>
             {d.grafico}
-            <p className="mt-2 text-sm text-stone-600">{d.leitura}</p>
+            {!d.semLeitura && <p className="mt-2 text-sm text-stone-600">{d.leitura}</p>}
             <p className="mt-3 text-sm text-stone-800">
               <span className="font-medium">Decisão que apoia: </span>
               {d.decisao}
