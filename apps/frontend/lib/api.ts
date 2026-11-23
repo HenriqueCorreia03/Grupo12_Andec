@@ -441,3 +441,51 @@ export function obterTamanhos(referencia: string, filtros: FiltrosUrl = {}): Pro
     { nuloSe404: true },
   );
 }
+
+/** Contrato de GET /api/ondas-e-pedidos/divididos-por-periodo (ticket 11, alavanca b). */
+export interface PeriodoDividido {
+  pedidosDivididos: number;
+  pedidosValidos: number;
+  percentagem: number | null;
+  ondas: number;
+  /** Média de unidades recolhidas ÷ 24 × 100 das ondas do período; nulo sem ondas. */
+  ocupacaoMedia: number | null;
+  diasComAtividade: number;
+  divididosPorDia: number | null;
+}
+
+export interface DividosPorPeriodo extends MetadadosIndicador {
+  /** Cada lista vem ordenada pelo critério da alavanca (b): mais divididos primeiro; em empate, menor ocupação média. */
+  meses: (PeriodoDividido & { mes: string })[];
+  diasDaSemana: (PeriodoDividido & { dia: number; nome: string; domingo: boolean })[];
+  horas: (PeriodoDividido & { hora: number })[];
+  criterio: string;
+}
+
+/** Contrato de GET /api/ondas-e-pedidos/carga (ticket 11). */
+export interface CargaDoPeriodo {
+  diasComAtividade: number;
+  pedidos: number;
+  unidades: number;
+  ondas: number;
+  pedidosPorDia: number | null;
+  unidadesPorDia: number | null;
+  ondasPorDia: number | null;
+}
+
+export interface CargaPorPeriodo extends MetadadosIndicador {
+  porMes: SerieMensal["meses"];
+  porDiaDaSemana: (CargaDoPeriodo & { dia: number; nome: string; domingo: boolean })[];
+  porHora: (CargaDoPeriodo & { hora: number })[];
+  porOperador: { rotulo: "carga, não desempenho"; operadores: { operador: string; unidades: number; ondas: number }[] };
+}
+
+/** Pedidos divididos por mês, dia da semana e hora, ordenados pela prioridade da alavanca (b). */
+export function obterDividosPorPeriodo(filtros: FiltrosUrl = {}): Promise<DividosPorPeriodo> {
+  return obter(`/api/ondas-e-pedidos/divididos-por-periodo${consulta(filtros)}`);
+}
+
+/** Carga por mês, dia da semana, hora e operador. */
+export function obterCarga(filtros: FiltrosUrl = {}): Promise<CargaPorPeriodo> {
+  return obter(`/api/ondas-e-pedidos/carga${consulta(filtros)}`);
+}

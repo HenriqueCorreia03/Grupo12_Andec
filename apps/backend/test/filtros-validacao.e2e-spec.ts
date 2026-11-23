@@ -10,6 +10,8 @@ const ENDPOINTS = [
   '/api/artigos/zonas',
   '/api/ondas-e-pedidos',
   '/api/ondas-e-pedidos/picking',
+  '/api/ondas-e-pedidos/divididos-por-periodo',
+  '/api/ondas-e-pedidos/carga',
 ];
 
 describe('Filtros, validação dos parâmetros e "sem dados" (fixture 4)', () => {
