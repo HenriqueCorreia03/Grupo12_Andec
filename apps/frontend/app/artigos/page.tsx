@@ -4,6 +4,7 @@ import { ErroApi } from "@/components/erro-api";
 import { obterAbc, obterTamanhos, type ReferenciasAbc } from "@/lib/api";
 import { consulta, filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
+import { AbcVersusAbccod } from "./abccod";
 import { EstabilidadeDoAbc } from "./estabilidade";
 import { PrioridadeArtigos } from "./prioridade";
 import { ParticipacaoZonas } from "./zonas";
@@ -33,6 +34,12 @@ export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
           <EstabilidadeDoPeriodo searchParams={searchParams} />
         </Suspense>
       </div>
+      <h2 className="mt-10 text-lg font-semibold">ABC calculado vs ABCCOD do ficheiro de produtos</h2>
+      <div className="mt-4">
+        <Suspense fallback={CARREGAR}>
+          <AbccodDoDataset searchParams={searchParams} />
+        </Suspense>
+      </div>
       <h2 className="mt-10 text-lg font-semibold">Zonas e localizações não mapeadas</h2>
       <div className="mt-4">
         <Suspense fallback={<div className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
@@ -49,6 +56,10 @@ async function PrioridadeDoPeriodo({ searchParams }: { searchParams: PageProps<"
 
 async function EstabilidadeDoPeriodo({ searchParams }: { searchParams: PageProps<"/artigos">["searchParams"] }) {
   return <EstabilidadeDoAbc filtros={filtrosDeObjeto(await searchParams)} />;
+}
+
+async function AbccodDoDataset({ searchParams }: { searchParams: PageProps<"/artigos">["searchParams"] }) {
+  return <AbcVersusAbccod filtros={filtrosDeObjeto(await searchParams)} />;
 }
 
 async function ZonasDoPeriodo({ searchParams }: { searchParams: PageProps<"/artigos">["searchParams"] }) {

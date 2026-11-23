@@ -1,9 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/database.module';
-import { customerOrder } from '../db/schema';
+import { customerOrder, product } from '../db/schema';
 import { abcGlobal, abcSobre, CLASSES_ABC, type ClasseAbc } from './abc';
-import { type Filtros, linhasFiltradas, SEM_FILTROS, selecionarLinhasCO, naoAplicaveis } from './filtros';
+import { type Filtros, filtrosAtivos, linhasFiltradas, SEM_FILTROS, selecionarLinhasCO, naoAplicaveis } from './filtros';
 import type { Metadados } from './metadados';
 
 export interface ResumoClasseAbc {
@@ -51,6 +51,18 @@ export interface TamanhosReferencia {
   unidades: number;
   /** Unidades por tamanho normalizado (35…125 → 3,5…12,5); nulo = tamanho vazio no CSV. */
   tamanhos: { tamanho: number | null; unidades: number; escalaPorConfirmar: boolean }[];
+}
+
+/** Comparação ABC calculado ↔ ABCCOD do Product (ticket 16): contraste, não verificação. */
+export interface AbcVsAbccod extends Metadados {
+  /** Linhas = classe ABC global calculada; colunas = ABCCOD do Product (nº de referências). */
+  matriz: { classe: ClasseAbc; abccod: Record<ClasseAbc, number> }[];
+  /** Referências com classe calculada e ABCCOD. */
+  comparadas: number;
+  coincidem: number;
+  /** coincidem ÷ comparadas × 100; nulo sem referências comparadas. */
+  valor: number | null;
+  nota: string;
 }
 
 export const DEFINICAO_ABC =
@@ -112,6 +124,58 @@ export class AbcService {
       classe: abc.classe,
       unidades: rows.reduce((soma, r) => soma + r.unidades, 0),
       tamanhos: rows.map((r) => ({ tamanho: r.tamanho, unidades: r.unidades, escalaPorConfirmar: r.escala_por_confirmar })),
+    };
+  }
+
+  /**
+   * Matriz de coincidência entre a classe ABC global (histórico completo) e o ABCCOD do Product. O ABCCOD não tem
+   * período, por isso a comparação usa sempre o dataset completo e qualquer filtro ativo é "não aplicável".
+   */
+  async vsAbccod(filtros: Filtros = SEM_FILTROS): Promise<AbcVsAbccod> {
+    const { rows } = await this.db.execute<{ classe: ClasseAbc | null; abccod: string | null; referencias: number }>(sql`
+      with global as (${abcGlobal()})
+      select g.classe, p.abccod, count(*)::int as referencias
+      from global g
+      full join ${product} p on p.reference = g.referencia
+      group by 1, 2
+    `);
+    const {
+      rows: [{ linhas }],
+    } = await this.db.execute<{ linhas: number }>(sql`
+      select count(*)::int as linhas from ${customerOrder} where ${customerOrder.quantity} > 0
+    `);
+
+    const contar = (classe: ClasseAbc, abccod: ClasseAbc) =>
+      rows.find((r) => r.classe === classe && r.abccod === abccod)?.referencias ?? 0;
+    const matriz = CLASSES_ABC.map((classe) => ({
+      classe,
+      abccod: { A: contar(classe, 'A'), B: contar(classe, 'B'), C: contar(classe, 'C') },
+    }));
+    const somar = (condicao: (r: (typeof rows)[number]) => boolean) =>
+      rows.filter(condicao).reduce((s, r) => s + r.referencias, 0);
+    const comparadas = somar((r) => r.classe !== null && r.abccod !== null);
+    const coincidem = CLASSES_ABC.reduce((s, classe) => s + contar(classe, classe), 0);
+
+    return {
+      matriz,
+      comparadas,
+      coincidem,
+      valor: comparadas === 0 ? null : (coincidem * 100) / comparadas,
+      nota:
+        'O ABCCOD do Product é só contraste, não verificação: usa outro critério ou outro período, que os dados não ' +
+        'explicam (pergunta ao docente: qual é a origem e o critério do ABCCOD?). A classe calculada é a global, ' +
+        'sobre todo o histórico do Customer_Order.',
+      definicao:
+        'Nº de referências por classe ABC global calculada (linhas) e por ABCCOD do Product (colunas). ' +
+        'Coincidência = referências com a mesma classe nos dois ÷ referências com as duas classes. ' +
+        DEFINICAO_ABC,
+      fonte: 'Customer_Order + Product',
+      filtrosNaoAplicaveis: filtrosAtivos(filtros),
+      linhasConsideradas: linhas,
+      exclusoes: [
+        { motivo: 'referências do Product sem procura no Customer_Order', quantidade: somar((r) => r.classe === null) },
+        { motivo: 'referências com procura sem ABCCOD no Product', quantidade: somar((r) => r.abccod === null) },
+      ],
     };
   }
 

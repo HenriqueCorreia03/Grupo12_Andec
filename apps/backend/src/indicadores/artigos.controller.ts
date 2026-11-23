@@ -1,5 +1,5 @@
 import { BadRequestException, Controller, Get, Param, Query } from '@nestjs/common';
-import { AbcService, type ReferenciasAbc, type TamanhosReferencia } from './abc.service';
+import { type AbcVsAbccod, AbcService, type ReferenciasAbc, type TamanhosReferencia } from './abc.service';
 import { ComparacaoService } from './comparacao.service';
 import { type EstabilidadeAbc, EstabilidadeService } from './estabilidade.service';
 import { lerFiltros } from './filtros';
@@ -30,6 +30,12 @@ export class ArtigosController {
   @Get('abc')
   referencias(@Query() query: Record<string, unknown>): Promise<ReferenciasAbc> {
     return this.abc.referencias(lerFiltros(query));
+  }
+
+  /** Matriz de coincidência ABC calculado ↔ ABCCOD do Product, sempre sobre o dataset completo (ticket 16). */
+  @Get('abc-vs-abccod')
+  abcVsAbccod(@Query() query: Record<string, unknown>): Promise<AbcVsAbccod> {
+    return this.abc.vsAbccod(lerFiltros(query));
   }
 
   /** Drill-down referência → unidades por tamanho (no período filtrado). */

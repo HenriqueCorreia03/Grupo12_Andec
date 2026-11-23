@@ -449,6 +449,21 @@ export function obterEstabilidade(filtros: FiltrosUrl = {}): Promise<Estabilidad
   return obter(`/api/artigos/estabilidade${consulta(filtros)}`);
 }
 
+/** Contrato de GET /api/artigos/abc-vs-abccod (ticket 16): sempre sobre o dataset completo. */
+export interface AbcVsAbccod extends MetadadosIndicador {
+  /** Linhas = classe ABC global calculada; colunas = ABCCOD do Product (nº de referências). */
+  matriz: { classe: ClasseAbc; abccod: Record<ClasseAbc, number> }[];
+  comparadas: number;
+  coincidem: number;
+  /** coincidem ÷ comparadas × 100; nulo sem referências comparadas. */
+  valor: number | null;
+  nota: string;
+}
+
+export function obterAbcVsAbccod(filtros: FiltrosUrl = {}): Promise<AbcVsAbccod> {
+  return obter(`/api/artigos/abc-vs-abccod${consulta(filtros)}`);
+}
+
 /** Unidades por tamanho normalizado de uma referência no período; nulo se a referência não tiver procura. */
 export function obterTamanhos(referencia: string, filtros: FiltrosUrl = {}): Promise<TamanhosReferencia | null> {
   return obter(
