@@ -56,3 +56,56 @@ body {
     animation-delay: 0s !important;
   }
 }
+
+/*
+ * Modo escuro: a classe "escuro" no <html> (botão no cabeçalho; sem escolha, segue o sistema) redefine as cores do
+ * Tailwind usadas no dashboard. Os componentes não mudam: os cinzentos invertem-se e os fundos de estado
+ * (vermelho, amarelo, verde) passam a tons escuros com texto claro.
+ */
+html.escuro {
+  color-scheme: dark;
+  --background: #151311;
+  --foreground: #ece8e3;
+  --color-white: #1f1c19;
+  --color-black: #ffffff;
+  --color-stone-50: #24211e;
+  --color-stone-100: #2c2925;
+  --color-stone-200: #3a3632;
+  --color-stone-300: #4f4a45;
+  --color-stone-400: #6f6963;
+  --color-stone-500: #a8a29b;
+  --color-stone-600: #bcb6af;
+  --color-stone-700: #d0cac3;
+  --color-stone-800: #e1dcd6;
+  --color-stone-900: #f1ede8;
+  --color-stone-950: #faf8f5;
+  --color-amber-50: #2b2210;
+  --color-amber-100: #3a2d12;
+  --color-amber-200: #5c4718;
+  --color-amber-300: #7a5e1c;
+  --color-amber-800: #f2cf7f;
+  --color-amber-900: #f6dca0;
+  --color-rose-50: #2c1418;
+  --color-rose-300: #7d2d3a;
+  --color-rose-800: #f4a5b0;
+  --color-emerald-50: #0f251b;
+  --color-emerald-300: #1d6a48;
+  --color-emerald-800: #8ee0b7;
+  --color-red-50: #2c1414;
+  --color-red-200: #6b2a2a;
+  --color-red-800: #f4a3a3;
+  --color-sky-200: #1f4a63;
+}
+/* Gráficos (recharts): a grelha, os eixos e o cursor seguem o fundo escuro. */
+html.escuro .recharts-cartesian-grid line,
+html.escuro .recharts-cartesian-axis-line,
+html.escuro .recharts-reference-line line {
+  stroke: #3a3632;
+}
+html.escuro .recharts-text {
+  fill: #bcb6af;
+}
+html.escuro .recharts-tooltip-cursor {
+  fill: #2c2925;
+  stroke: #6f6963;
+}
