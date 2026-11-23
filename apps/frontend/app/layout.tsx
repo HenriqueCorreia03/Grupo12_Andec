@@ -17,7 +17,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-PT" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <header className="border-b border-stone-200 bg-white">
+        {/* O cabeçalho e os filtros ficam parados durante as transições (ver globals.css). */}
+        <header className="border-b border-stone-200 bg-white" style={{ viewTransitionName: "cabecalho" }}>
           <div className="mx-auto max-w-6xl px-6 py-4">
             <p className="text-sm text-stone-500">Armazém de calçado</p>
             <p className="text-lg font-semibold">Prioridades de operação</p>
@@ -30,7 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <PainelFiltros />
           </Suspense>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+          {children}
+        </main>
       </body>
     </html>
   );

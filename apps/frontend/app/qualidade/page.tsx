@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, ViewTransition, type ReactNode } from "react";
 import { ErroApi } from "@/components/erro-api";
 import Link from "next/link";
 import { CartaoResumo, FaixaKpi } from "@/components/faixa-kpi";
+import { BarraParteTodo, BarraSegmentos } from "@/components/mini-graficos";
 import { TabelaRecolhida } from "@/components/tabela-recolhida";
 import { VerDetalhe } from "@/components/ver-detalhe";
 import { obterQualidade, obterSensibilidadeDuplicados, type Qualidade } from "@/lib/api";
@@ -12,7 +13,9 @@ import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
 export const metadata: Metadata = { title: "Qualidade dos dados" };
 
 export default function QualidadePage({ searchParams }: PageProps<"/qualidade">) {
+  // Fade curto só ao entrar e sair da página (não a cada bloco de dados que carrega): ver globals.css.
   return (
+    <ViewTransition enter="troca" exit="troca" default="none">
     <section>
       <h1 className="text-2xl font-semibold">Qualidade dos dados e limitações</h1>
       <p className="mt-1 text-sm text-stone-500">
@@ -23,6 +26,7 @@ export default function QualidadePage({ searchParams }: PageProps<"/qualidade">)
         <ConteudoQualidade searchParams={searchParams} />
       </Suspense>
     </section>
+    </ViewTransition>
   );
 }
 
@@ -60,32 +64,75 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
             titulo="Encomendado que não foi recolhido"
             valor={formatarNumero(r.diferenca)}
             unidade="un."
-            leitura={`Encomendado ${formatarNumero(r.encomendado)} un.; recolhido ${formatarNumero(r.recolhido)} un.`}
+            grafico={
+              <BarraParteTodo
+                parte={r.recolhido}
+                todo={r.encomendado}
+                classe="bg-[#2a78d6]"
+                titulo={`${formatarNumero(r.encomendado)} unidades encomendadas`}
+                rotuloParte="recolhidas"
+                rotuloResto="nunca recolhidas"
+              />
+            }
           />
           <CartaoResumo
             titulo="Linhas de encomenda sem recolha correspondente"
             valor={formatarPercentagemOuNulo(c.percentagemSemCorrespondencia)}
-            leitura={`${formatarNumero(c.linhasSemCorrespondencia)} de ${formatarNumero(c.linhasCO)} linhas de encomenda não encontram a sua recolha no picking.`}
+            grafico={
+              <BarraParteTodo
+                parte={c.linhasCO - c.linhasSemCorrespondencia}
+                todo={c.linhasCO}
+                classe="bg-[#2a78d6]"
+                titulo={`${formatarNumero(c.linhasCO)} linhas de encomenda`}
+                rotuloParte="encontram a sua recolha"
+                rotuloResto="sem recolha correspondente"
+              />
+            }
           />
           <CartaoResumo
             titulo="Recolhido em sítios fora do mapa"
             valor={formatarPercentagemOuNulo(naoMapeadas.percentagemRecolhido)}
             unidade="do recolhido"
-            leitura={
-              `${formatarNumero(naoMapeadas.unidades)} un. em ${formatarNumero(naoMapeadas.localizacoes.length)} localizações` +
-              (rc01 ? `; RC-01: ${formatarNumero(rc01.unidades)} un.` : ".")
+            grafico={
+              <BarraSegmentos
+                titulo={`${formatarNumero(r.recolhido)} unidades recolhidas`}
+                segmentos={[
+                  { valor: r.recolhido - naoMapeadas.unidades, rotulo: "em sítios que estão no mapa", classe: "bg-stone-300" },
+                  { valor: rc01?.unidades ?? 0, rotulo: "na área RC-01", classe: "bg-amber-500" },
+                  { valor: naoMapeadas.unidades - (rc01?.unidades ?? 0), rotulo: `noutros ${formatarNumero(Math.max(0, naoMapeadas.localizacoes.length - 1))} sítios fora do mapa`, classe: "bg-amber-300" },
+                ]}
+              />
             }
           />
           <CartaoResumo
             titulo="Linhas duplicadas (contam como reais)"
             valor={formatarNumero(c.linhasDuplicadas)}
             unidade="linhas"
-            leitura={`${formatarNumero(c.unidadesDuplicadas)} un. nessas linhas.`}
+            grafico={
+              <BarraParteTodo
+                parte={c.linhasDuplicadas}
+                todo={c.linhasCO}
+                classe="bg-[#2a78d6]"
+                titulo={`${formatarNumero(c.linhasCO)} linhas de encomenda`}
+                rotuloParte="repetem outra linha"
+                rotuloResto="únicas"
+              />
+            }
+            leitura={`Têm ${formatarNumero(c.unidadesDuplicadas)} unidades e contam como encomendas reais.`}
           />
           <CartaoResumo
             titulo="Ligações repartidas por várias zonas"
             valor={formatarPercentagemOuNulo(ligacoesRepartidas.valor)}
-            leitura={`${formatarNumero(ligacoesRepartidas.linhasRepartidas)} de ${formatarNumero(ligacoesRepartidas.linhasLigadas)} linhas foram recolhidas em mais do que uma zona.`}
+            grafico={
+              <BarraParteTodo
+                parte={ligacoesRepartidas.linhasRepartidas}
+                todo={ligacoesRepartidas.linhasLigadas}
+                classe="bg-[#2a78d6]"
+                titulo={`${formatarNumero(ligacoesRepartidas.linhasLigadas)} linhas de encomenda com recolha`}
+                rotuloParte="recolhidas em 2 ou mais zonas"
+                rotuloResto="recolhidas numa só zona"
+              />
+            }
           />
         </FaixaKpi>
       </div>

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
+import { BarraSegmentos } from "@/components/mini-graficos";
 import { FaixaKpi, FaixaKpiACarregar } from "@/components/faixa-kpi";
 import { obterOndasEPedidos, type OndasEPedidos } from "@/lib/api";
 import { filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
@@ -18,7 +19,9 @@ export const metadata: Metadata = { title: "Ondas e pedidos" };
  * e gráfico de ocupação, (3) lista de ondas e rankings por período.
  */
 export default function OndasPage({ searchParams }: PageProps<"/ondas">) {
+  // Fade curto só ao entrar e sair da página (não a cada bloco de dados que carrega): ver globals.css.
   return (
+    <ViewTransition enter="troca" exit="troca" default="none">
     <section>
       <h1 className="text-2xl font-semibold">Ondas e pedidos</h1>
       <p className="mt-1 text-sm text-stone-500">
@@ -29,6 +32,7 @@ export default function OndasPage({ searchParams }: PageProps<"/ondas">) {
         <ConteudoDasOndas searchParams={searchParams} />
       </Suspense>
     </section>
+    </ViewTransition>
   );
 }
 
@@ -76,18 +80,20 @@ async function PedidosDivididosCartao({ filtros }: { filtros: FiltrosUrl }) {
   }
   const d = dados.pedidosDivididos;
   const percentagem = formatarPercentagemOuNulo(d.valor);
-  const evitaveis =
-    d.percentagemAte24 === null
-      ? ""
-      : `; ${formatarNumero(d.divididosAte24)} cabiam numa só onda (até 24 un., ${formatarPercentagemOuNulo(d.percentagemAte24)} dos pedidos)`;
   return (
     <CartaoIndicador
       titulo="Pedidos divididos entre ondas"
       metadados={d}
       valorResumo={percentagem}
-      leitura={
-        `${formatarNumero(d.pedidosDivididos)} de ${formatarNumero(d.pedidosValidos)} pedidos saíram em mais de uma onda: ` +
-        `${formatarNumero(d.divididosMaisDe24)} tinham mais de 24 un. e não cabiam numa só${evitaveis}.`
+      grafico={
+        <BarraSegmentos
+          titulo={`${formatarNumero(d.pedidosValidos)} pedidos`}
+          segmentos={[
+            { valor: d.pedidosValidos - d.pedidosDivididos, rotulo: "saíram numa só onda", classe: "bg-stone-300" },
+            { valor: d.divididosMaisDe24, rotulo: "partidos, mas tinham mais de 24 un. (não cabiam)", classe: "bg-[#86b6ef]" },
+            { valor: d.divididosAte24, rotulo: "partidos quando cabiam numa onda", classe: "bg-amber-500" },
+          ]}
+        />
       }
     >
       <ValorIndicador texto={percentagem} />

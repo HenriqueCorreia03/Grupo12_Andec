@@ -10,3 +10,49 @@ body {
   color: var(--foreground);
   font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
 }
+
+/*
+ * Transições entre estados da página (React <ViewTransition>, ver app/layout.tsx): o conteúdo sai depressa e entra
+ * com um fade curto; o cabeçalho e os filtros não se mexem. Com "reduzir movimento", a troca é instantânea.
+ */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-group(cabecalho) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(cabecalho) {
+  display: none;
+}
+::view-transition-new(cabecalho) {
+  animation: none;
+}
+::view-transition-old(.troca) {
+  animation: 120ms ease-out both aparecer reverse;
+}
+::view-transition-new(.troca) {
+  animation: 220ms ease-out 60ms both aparecer;
+}
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
