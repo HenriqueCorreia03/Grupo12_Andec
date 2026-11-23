@@ -30,26 +30,26 @@ export function Diagnostico({ matriz, filtros }: { matriz: MatrizAlavancas; filt
       pergunta: "Os artigos A estão espalhados por muitas localizações?",
       criterio: "impacto",
       medido: a.impacto,
-      unidadeDoValor: "das paragens fora das 3 localizações principais",
-      leitura: `${formatarNumero(a.impacto.numerador)} de ${formatarNumero(a.impacto.denominador)} paragens de ${formatarNumero(a.impacto.artigosA)} artigos A.`,
+      unidadeDoValor: "das idas a artigos A são fora das 3 prateleiras de onde cada um mais sai",
+      leitura: `${formatarNumero(a.impacto.numerador)} de ${formatarNumero(a.impacto.denominador)} idas às prateleiras, nos ${formatarNumero(a.impacto.artigosA)} artigos A com recolhas.`,
       acoes: {
-        mal: "Reorganizar as localizações dos artigos A, a começar pelos do topo do ranking de prioridade.",
-        atencao: "Reorganizar as localizações dos artigos A, a começar pelos do topo do ranking de prioridade.",
+        mal: "Arrumar os artigos A em menos sítios, a começar pelos primeiros da lista de prioridade.",
+        atencao: "Arrumar os artigos A em menos sítios, a começar pelos primeiros da lista de prioridade.",
         bem: "Os artigos A já estão concentrados: reorganizar tem pouco a ganhar.",
       },
-      ligacao: { texto: "Ver o ranking de prioridade", pagina: "/artigos", ancora: "prioridade" },
+      ligacao: { texto: "Ver a lista de prioridade", pagina: "/artigos", ancora: "prioridade" },
     },
     {
       id: "divididos-b",
       pergunta: "Há pedidos divididos entre ondas que se podiam evitar?",
       criterio: "impacto",
       medido: b.impacto,
-      unidadeDoValor: "dos pedidos (divididos com ≤ 24 un.)",
-      leitura: `${formatarNumero(b.impacto.numerador)} de ${formatarNumero(b.impacto.denominador)} pedidos válidos.`,
+      unidadeDoValor: "dos pedidos foram partidos em várias ondas quando cabiam numa só (até 24 un.)",
+      leitura: `${formatarNumero(b.impacto.numerador)} de ${formatarNumero(b.impacto.denominador)} pedidos.`,
       acoes: {
         mal: "Rever a regra de constituição das ondas, a começar pelos períodos com mais pedidos divididos.",
         atencao: "Rever a regra de constituição das ondas, a começar pelos períodos com mais pedidos divididos.",
-        bem: "Mudar a regra das ondas tem pouco a ganhar: poucas divisões são evitáveis.",
+        bem: "Mudar a regra das ondas ganha pouco: poucos pedidos se podiam ter evitado partir.",
       },
       ligacao: { texto: "Ver os pedidos divididos por período", pagina: "/ondas", ancora: "titulo-divididos" },
     },
@@ -58,8 +58,8 @@ export function Diagnostico({ matriz, filtros }: { matriz: MatrizAlavancas; filt
       pergunta: "Os dados das localizações são fiáveis?",
       criterio: "robustez",
       medido: a.robustez,
-      unidadeDoValor: "do recolhido em localizações mapeadas",
-      leitura: `${formatarNumero(a.robustez.denominador - a.robustez.numerador)} un. recolhidas em localizações não mapeadas (RC-01 e outras).`,
+      unidadeDoValor: "do que se recolhe sai de sítios que estão no mapa do armazém",
+      leitura: `${formatarNumero(a.robustez.denominador - a.robustez.numerador)} unidades saem de sítios fora do mapa, sobretudo a área RC-01.`,
       acoes: {
         mal: "Mapear o RC-01 e as outras localizações em falta antes de reorganizar: a dispersão real não é visível.",
         atencao: "Mapear o RC-01 e as outras localizações em falta, para confirmar a dispersão real.",
@@ -72,8 +72,8 @@ export function Diagnostico({ matriz, filtros }: { matriz: MatrizAlavancas; filt
       pergunta: "A ligação entre encomendas e picking é fiável?",
       criterio: "robustez",
       medido: b.robustez,
-      unidadeDoValor: "das linhas de encomenda ligadas ao picking",
-      leitura: `${formatarNumero(b.robustez.denominador - b.robustez.numerador)} de ${formatarNumero(b.robustez.denominador)} linhas sem correspondência.`,
+      unidadeDoValor: "das linhas de encomenda encontram a sua recolha no picking",
+      leitura: `${formatarNumero(b.robustez.denominador - b.robustez.numerador)} de ${formatarNumero(b.robustez.denominador)} linhas ficam sem recolha correspondente.`,
       acoes: {
         mal: "Rever as linhas de encomenda sem correspondência no picking antes de mudar as ondas.",
         atencao: "Rever as linhas de encomenda sem correspondência no picking antes de mudar as ondas.",
@@ -102,8 +102,8 @@ export function Diagnostico({ matriz, filtros }: { matriz: MatrizAlavancas; filt
         ))}
       </div>
       <p className="mt-2 text-xs text-stone-500">
-        Cores pelos limiares da spec (os mesmos da matriz das alavancas), sobre o dataset completo. Mostram o potencial
-        observado nos dados, nunca um ganho esperado.
+        As cores seguem limites fixos, os mesmos da matriz das duas ideias, sobre todo o histórico. Mostram quanto há
+        para melhorar, nunca um ganho garantido.
       </p>
     </section>
   );

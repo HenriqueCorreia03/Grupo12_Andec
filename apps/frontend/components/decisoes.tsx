@@ -77,10 +77,10 @@ export function OutrasDecisoes({
       unidadeDoDestaque: "",
       leitura:
         mes && dia && hora
-          ? `Os períodos com mais pedidos divididos: ${formatarNumero(mes.pedidosDivididos)} no mês (${formatarPercentagemOuNulo(mes.percentagem) ?? "sem dados"} dos pedidos), ${formatarNumero(dia.pedidosDivididos)} à ${dia.nome} e ${formatarNumero(hora.pedidosDivididos)} às ${hora.hora}h.`
+          ? `É onde há mais pedidos partidos: ${formatarNumero(mes.pedidosDivididos)} em ${MES_LONGO[Number(mes.mes.slice(5)) - 1]} (${formatarPercentagemOuNulo(mes.percentagem) ?? "sem dados"} dos pedidos do mês), ${formatarNumero(dia.pedidosDivididos)} às ${dia.nome.replace("-feira", "s-feiras")} e ${formatarNumero(hora.pedidosDivididos)} às ${hora.hora}h, a hora com mais trabalho.`
           : "Sem pedidos divididos no período.",
       decisao:
-        "Um teste operacional começa onde o problema é maior: o mês, o dia e a hora com mais pedidos divididos.",
+        "Testar a regra nova onde há mais casos: no mês, no dia e na hora com mais pedidos partidos.",
       ligacao: {
         texto: "Ver os divididos por período",
         pagina: "/ondas",
@@ -89,12 +89,12 @@ export function OutrasDecisoes({
     },
     {
       id: "agrupar",
-      pergunta: "Há ondas incompletas que podiam ter saído juntas?",
+      pergunta: "Há ondas incompletas (menos de 24 un.) que podiam ter saído juntas?",
       destaque: formatarNumero(incompletas.ondasSimultaneas),
       unidadeDoDestaque: `de ${formatarNumero(incompletas.ondasIncompletas)} ondas incompletas criadas à mesma hora que outra incompleta`,
       leitura: `Em ${formatarNumero(incompletas.gruposDiaHora)} grupos de dia e hora, com ${formatarNumero(incompletas.pedidosDivididosEnvolvidos)} pedidos divididos envolvidos. É uma observação, não uma simulação.`,
       decisao:
-        "Diz que regra de agrupamento testar: juntar ondas incompletas criadas à mesma hora.",
+        "Testar uma regra que junte as ondas incompletas criadas à mesma hora.",
       ligacao: {
         texto: "Ver as ondas incompletas",
         pagina: "/ondas",
@@ -109,9 +109,8 @@ export function OutrasDecisoes({
         Outras decisões que os dados apoiam
       </h2>
       <p className="mt-1 text-sm text-stone-500">
-        Além de escolher entre as duas alavancas: quando rever, onde testar e o
-        que agrupar. Sem cor de estado, porque não há meta definida para estas
-        medidas.
+        Além de escolher entre as duas ideias: quando rever, onde testar e o que juntar. Não têm cor de bom ou mau porque
+        não há uma meta definida para estas medidas.
       </p>
       <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
         {decisoes.map((d) => (

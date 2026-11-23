@@ -17,8 +17,8 @@ import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
 export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
   const { a, b } = matriz;
   const linhas = [
-    { id: "a", nome: "(a) Reorganizar localizações", alavanca: a },
-    { id: "b", nome: "(b) Constituição das ondas", alavanca: b },
+    { id: "a", nome: "(a) Reorganizar as localizações", alavanca: a },
+    { id: "b", nome: "(b) Mudar a constituição das ondas", alavanca: b },
   ];
 
   return (
@@ -46,15 +46,15 @@ export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
             {alavanca.impacto.avisoLimiar && (
               <p className="mt-3 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">⚠ {alavanca.impacto.avisoLimiar}</p>
             )}
-            <p className="mt-3 text-xs text-stone-600">Esforço: {alavanca.esforco.origem}, não é medido.</p>
+            <p className="mt-3 text-xs text-stone-600">O esforço é uma avaliação da equipa, não uma medição.</p>
           </section>
         ))}
       </div>
       <p className="mt-3 text-sm text-stone-700">
-        <span className="font-medium">Leitura das notas</span> (3 = mais espaço de melhoria, evidência mais robusta ou menor esforço): {leitura(a, b)}
+        <span className="font-medium">Como ler:</span> em cada critério, 3 é o mais favorável (mais para melhorar, dados mais fiáveis, menos esforço). {leitura(a, b)}
       </p>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-stone-600">
-        <span>Cores pelos limiares da spec:</span>
+        <span>Cores:</span>
         <LegendaDasCores />
       </div>
 
@@ -134,14 +134,14 @@ function NotaGrande({
 function leitura(a: NotasDaAlavanca, b: NotasDaAlavanca): string {
   const comparar = (criterio: string, na: NotaMatriz | null, nb: NotaMatriz | null) => {
     if (na === null || nb === null) return `${criterio}: sem nota`;
-    if (na === nb) return `${criterio}: empate (${na})`;
-    return `${criterio}: ${na > nb ? "(a)" : "(b)"} ${na > nb ? na : nb} contra ${na > nb ? nb : na}`;
+    if (na === nb) return `${criterio}: empate (${na} a ${nb})`;
+    return `${criterio}: ganha ${na > nb ? "(a)" : "(b)"}, ${na > nb ? na : nb} a ${na > nb ? nb : na}`;
   };
   return [
-    comparar("maior impacto", a.impacto.nota, b.impacto.nota),
-    comparar("evidência mais robusta", a.robustez.nota, b.robustez.nota),
-    comparar("menor esforço", a.esforco.nota, b.esforco.nota),
-  ].join("; ") + ".";
+    comparar("Impacto", a.impacto.nota, b.impacto.nota),
+    comparar("Robustez", a.robustez.nota, b.robustez.nota),
+    comparar("Esforço", a.esforco.nota, b.esforco.nota),
+  ].join(". ") + ".";
 }
 
 function percentagem(valor: number | null): string {

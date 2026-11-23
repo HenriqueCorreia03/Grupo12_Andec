@@ -34,8 +34,8 @@ export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
     <section>
       <h1 className="text-2xl font-semibold">Artigos, ABC e localizações</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Alavanca (a). Os indicadores principais primeiro; o detalhe vem por baixo. Clique numa classe para ver as
-        referências e numa referência para ver as unidades por tamanho. Os filtros do painel aplicam-se a tudo nesta página.
+        Ideia (a): reorganizar as localizações. Os números principais primeiro e o detalhe por baixo. Clique numa classe
+        para ver os artigos, e num artigo para ver as unidades por tamanho. Os filtros aplicam-se a toda a página.
       </p>
       <div className="mt-6">
         <Suspense fallback={<FaixaKpiACarregar cartoes={5} />}>
@@ -127,8 +127,8 @@ async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps
         metadados={prioridade}
         valorResumo={formatarNumero(resumoA.artigosA)}
         leitura={
-          `${formatarNumero(resumoA.artigosA)} artigos A, ${formatarNumero(resumoA.artigosAComPicking)} com picking` +
-          (medianaLocalizacoes ? `; mediana de ${medianaLocalizacoes} localizações por artigo A.` : ".")
+          `${formatarNumero(resumoA.artigosAComPicking)} deles foram recolhidos` +
+          (medianaLocalizacoes ? `; cada um sai, em mediana, de ${medianaLocalizacoes} sítios diferentes.` : ".")
         }
       >
         <ValorIndicador texto={formatarNumero(resumoA.artigosA)} unidade="artigos" />
@@ -140,7 +140,7 @@ async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps
         valorResumo={percentagemA}
         leitura={
           classeA
-            ? `${formatarNumero(classeA.referencias)} de ${formatarNumero(abc.totalReferencias)} referências com procura no período são A.`
+            ? `${formatarNumero(classeA.referencias)} dos ${formatarNumero(abc.totalReferencias)} artigos encomendados no período são A.`
             : null
         }
       >
@@ -152,8 +152,8 @@ async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps
         metadados={estabilidade}
         valorResumo={mudam}
         leitura={
-          `${formatarNumero(estabilidade.mudaram)} mudanças em ${formatarNumero(estabilidade.comparadas)} comparações; ` +
-          `${formatarNumero(estabilidade.combinacoes.excluidas)} combinações referência-mês excluídas (< ${estabilidade.limiarUnidades} un.).`
+          `${formatarNumero(estabilidade.mudaram)} mudanças em ${formatarNumero(estabilidade.comparadas)} comparações de um mês para o seguinte ` +
+          `(só artigos com ${estabilidade.limiarUnidades} ou mais unidades nos dois meses).`
         }
       >
         <ValorIndicador texto={mudam} />
@@ -163,7 +163,7 @@ async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps
         titulo="Localizações não mapeadas"
         metadados={zonas.participacaoPorZona}
         valorResumo={percentagemNaoMapeadas}
-        leitura={`${formatarNumero(naoMapeadas.unidades)} un., das quais RC-01: ${formatarNumero(naoMapeadas.rc01Unidades)} un.`}
+        leitura={`${formatarNumero(naoMapeadas.unidades)} unidades saíram de sítios fora do mapa; ${formatarNumero(naoMapeadas.rc01Unidades)} delas da área RC-01.`}
       >
         <ValorIndicador texto={percentagemNaoMapeadas} unidade="do recolhido" />
       </CartaoIndicador>
@@ -172,7 +172,7 @@ async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps
         titulo="Pedidos multizona"
         metadados={multizona}
         valorResumo={percentagemMultizona}
-        leitura={`${formatarNumero(multizona.pedidosMultizona)} de ${formatarNumero(multizona.pedidosValidos)} pedidos válidos têm unidades em 2 ou mais zonas.`}
+        leitura={`${formatarNumero(multizona.pedidosMultizona)} de ${formatarNumero(multizona.pedidosValidos)} pedidos obrigam a ir a 2 ou mais zonas do armazém.`}
       >
         <ValorIndicador texto={percentagemMultizona} unidade="dos pedidos" />
       </CartaoIndicador>
