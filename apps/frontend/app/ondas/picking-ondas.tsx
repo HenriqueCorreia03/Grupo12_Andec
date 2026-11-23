@@ -154,7 +154,7 @@ function ListaDeOndas({
   return (
     <div className="rounded-lg border border-stone-200 bg-white shadow-sm">
       <div className="px-4 pt-4">
-        <h3 className="text-sm font-semibold">Lista de ondas</h3>
+        <h3 id="lista-ondas" className="scroll-mt-4 text-sm font-semibold">Lista de ondas</h3>
         <p className="mt-1 max-w-3xl text-sm text-stone-700">
           Cada linha é uma onda de picking, um conjunto de pedidos recolhido de uma vez. Clique no número de uma onda para ver os seus
           pedidos, as linhas e as localizações. Uma onda está <strong>incompleta</strong> quando recolhe menos de 24 unidades (a capacidade de referência).

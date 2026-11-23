@@ -2,12 +2,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
+import { OutrasDecisoes } from "@/components/decisoes";
 import { Diagnostico } from "@/components/diagnostico";
 import { ErroApi } from "@/components/erro-api";
 import { FaixaKpi, FaixaKpiACarregar } from "@/components/faixa-kpi";
 import { MatrizAlavancasView } from "@/components/matriz-alavancas";
 import { GraficosSerieMensal } from "@/components/serie-mensal";
-import { obterSerieMensal, obterVisaoGeral, type Comparacao, type SerieMensal, type VisaoGeral } from "@/lib/api";
+import {
+  obterDividosPorPeriodo,
+  obterEstabilidade,
+  obterOndasIncompletas,
+  obterSerieMensal,
+  obterVisaoGeral,
+  type Comparacao,
+  type SerieMensal,
+  type VisaoGeral,
+} from "@/lib/api";
 import { consulta, filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
 import {
   formatarNumero,
@@ -34,6 +44,9 @@ export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
       <div className="mt-4">
         <Suspense fallback={<FaixaKpiACarregar cartoes={4} />}>
           <DiagnosticoDaOperacao searchParams={searchParams} />
+        </Suspense>
+        <Suspense fallback={<div className="mt-8"><FaixaKpiACarregar cartoes={3} /></div>}>
+          <OutrasDecisoesDaOperacao searchParams={searchParams} />
         </Suspense>
       </div>
       <h2 className="mt-8 text-lg font-semibold">Indicadores da operação</h2>
@@ -73,6 +86,25 @@ async function DiagnosticoDaOperacao({ searchParams }: { searchParams: PageProps
     return <ErroApi mensagem={(e as Error).message} />;
   }
   return <Diagnostico matriz={matriz} filtros={filtros} />;
+}
+
+/** As decisões das perguntas P2, P3 e P6 (quando rever, onde testar, o que agrupar), além das duas alavancas. */
+async function OutrasDecisoesDaOperacao({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+  const filtros = filtrosDeObjeto(await searchParams);
+  try {
+    const [estabilidade, divididos, incompletas] = await Promise.all([
+      obterEstabilidade(filtros),
+      obterDividosPorPeriodo(filtros),
+      obterOndasIncompletas(filtros),
+    ]);
+    return <OutrasDecisoes estabilidade={estabilidade} divididos={divididos} incompletas={incompletas} filtros={filtros} />;
+  } catch (e) {
+    return (
+      <div className="mt-8">
+        <ErroApi mensagem={(e as Error).message} />
+      </div>
+    );
+  }
 }
 
 async function Matriz({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
