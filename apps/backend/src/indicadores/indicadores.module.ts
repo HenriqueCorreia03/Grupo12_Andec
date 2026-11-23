@@ -7,6 +7,8 @@ import { DetalheOndaService } from './detalhe-onda.service';
 import { IndicadoresService } from './indicadores.service';
 import { MatrizService } from './matriz.service';
 import { OndasEPedidosController } from './ondas-e-pedidos.controller';
+import { OndasIncompletasController } from './ondas-incompletas.controller';
+import { OndasIncompletasService } from './ondas-incompletas.service';
 import { PedidosDivididosService } from './pedidos-divididos.service';
 import { PeriodosController } from './periodos.controller';
 import { PeriodosService } from './periodos.service';
@@ -26,6 +28,7 @@ import { ZonasService } from './zonas.service';
     ZonasController,
     DetalheOndaController,
     PeriodosController,
+    OndasIncompletasController,
   ],
   providers: [
     ComparacaoService,
@@ -38,6 +41,7 @@ import { ZonasService } from './zonas.service';
     DetalheOndaService,
     SerieMensalService,
     PeriodosService,
+    OndasIncompletasService,
   ],
 })
 export class IndicadoresModule {}
