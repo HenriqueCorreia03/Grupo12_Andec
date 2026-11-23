@@ -1,5 +1,6 @@
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
+import { TabelaRecolhida } from "@/components/tabela-recolhida";
 import { obterPrioridade, type PrioridadeDosArtigos } from "@/lib/api";
 import type { FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarNumeroOuNulo } from "@/lib/formatar";
@@ -20,7 +21,7 @@ export async function PrioridadeArtigos({ filtros }: { filtros: FiltrosUrl }) {
   const mediana = formatarNumeroOuNulo(localizacoes.mediana);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <CartaoIndicador
         titulo="Localizações distintas por artigo A"
         metadados={corpo}
@@ -48,43 +49,41 @@ export async function PrioridadeArtigos({ filtros }: { filtros: FiltrosUrl }) {
         </p>
       </CartaoIndicador>
 
-      <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
         {artigos.length === 0 ? (
           <p className="p-5 text-sm text-stone-500">sem dados</p>
         ) : (
-          <div className="max-h-[28rem] overflow-y-auto">
-            <table className="w-full text-sm">
-              <caption className="px-4 py-3 text-left text-sm font-medium text-stone-500">
+          <TabelaRecolhida
+            legenda={
+              <>
                 Prioridade de reposicionamento ({formatarNumero(artigos.length)} referências com picking): por paragens,
                 depois localizações distintas, depois código
-              </caption>
-              <thead className="sticky top-0 border-y border-stone-200 bg-stone-50 text-left text-stone-500">
-                <tr>
-                  <th className="px-4 py-2 font-normal">#</th>
-                  <th className="px-4 py-2 font-normal">Referência</th>
-                  <th className="px-4 py-2 text-center font-normal">Classe global</th>
-                  <th className="px-4 py-2 text-right font-normal">Paragens</th>
-                  <th className="px-4 py-2 text-right font-normal">Localizações</th>
-                  <th className="px-4 py-2 text-right font-normal">Un. recolhidas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {artigos.map((a) => (
-                  <tr key={a.referencia} className="border-t border-stone-100">
-                    <td className="px-4 py-1.5 text-stone-500">{a.posicao}</td>
-                    <td className="px-4 py-1.5 font-medium">{a.referencia}</td>
-                    <td className="px-4 py-1.5 text-center font-semibold">{a.classe ?? "—"}</td>
-                    <td className="px-4 py-1.5 text-right">{formatarNumero(a.paragens)}</td>
-                    <td className="px-4 py-1.5 text-right">
-                      {formatarNumero(a.localizacoesDistintas)}
-                      {a.passaPeloRc01 && <span title="Inclui o RC-01, contado como 1 localização"> †</span>}
-                    </td>
-                    <td className="px-4 py-1.5 text-right">{formatarNumero(a.unidadesRecolhidas)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              </>
+            }
+            cabecalho={
+              <tr>
+                <th className="px-4 py-2 font-normal">#</th>
+                <th className="px-4 py-2 font-normal">Referência</th>
+                <th className="px-4 py-2 text-center font-normal">Classe global</th>
+                <th className="px-4 py-2 text-right font-normal">Paragens</th>
+                <th className="px-4 py-2 text-right font-normal">Localizações</th>
+                <th className="px-4 py-2 text-right font-normal">Un. recolhidas</th>
+              </tr>
+            }
+            linhas={artigos.map((a) => (
+              <tr key={a.referencia} className="border-t border-stone-100">
+                <td className="px-4 py-1.5 text-stone-500">{a.posicao}</td>
+                <td className="px-4 py-1.5 font-medium">{a.referencia}</td>
+                <td className="px-4 py-1.5 text-center font-semibold">{a.classe ?? "—"}</td>
+                <td className="px-4 py-1.5 text-right">{formatarNumero(a.paragens)}</td>
+                <td className="px-4 py-1.5 text-right">
+                  {formatarNumero(a.localizacoesDistintas)}
+                  {a.passaPeloRc01 && <span title="Inclui o RC-01, contado como 1 localização"> †</span>}
+                </td>
+                <td className="px-4 py-1.5 text-right">{formatarNumero(a.unidadesRecolhidas)}</td>
+              </tr>
+            ))}
+          />
         )}
         <p className="border-t border-stone-200 px-4 py-2 text-xs text-stone-500">
           † Passa pelo RC-01, contado como 1 localização. Fonte: {corpo.fonte}.

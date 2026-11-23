@@ -1,37 +1,42 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
+import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
+import { FaixaKpi, FaixaKpiACarregar } from "@/components/faixa-kpi";
 import { MatrizAlavancasView } from "@/components/matriz-alavancas";
 import { GraficosSerieMensal } from "@/components/serie-mensal";
-import { obterSerieMensal, obterVisaoGeral, type SerieMensal, type VisaoGeral } from "@/lib/api";
+import { obterSerieMensal, obterVisaoGeral, type Comparacao, type SerieMensal, type VisaoGeral } from "@/lib/api";
 import { consulta, filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
 import {
   formatarNumero,
   formatarNumeroOuNulo,
   formatarPercentagem,
   formatarPercentagemOuNulo,
+  formatarVariacao,
 } from "@/lib/formatar";
 
 export const metadata: Metadata = { title: { absolute: "Visão geral · Armazém de calçado" } };
 
+/**
+ * Visão geral (ticket 19, "resumo primeiro, detalhe a pedido"): (1) faixa de KPI, (2) matriz das alavancas,
+ * (3) evolução mensal.
+ */
 export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
   return (
     <section>
       <h1 className="text-2xl font-semibold">Visão geral</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Indicadores calculados no servidor a partir dos CSV carregados pelo ETL. Clique num cartão para ver a definição.
+        Os indicadores principais primeiro; o detalhe vem por baixo. Clique num cartão para ver a definição.
       </p>
-      <div className="mt-6">
-        <Suspense fallback={<div className="h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
-          <Matriz searchParams={searchParams} />
+      <div className="mt-4">
+        <Suspense fallback={<FaixaKpiACarregar />}>
+          <IndicadoresMinimos searchParams={searchParams} />
         </Suspense>
       </div>
-      <h2 className="mt-10 text-lg font-semibold">Indicadores da encomenda</h2>
       <div className="mt-4">
-        <Suspense fallback={<CartoesACarregar />}>
-          <IndicadoresMinimos searchParams={searchParams} />
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
+          <Matriz searchParams={searchParams} />
         </Suspense>
       </div>
       <h2 className="mt-10 text-lg font-semibold">Evolução mensal por dia com atividade</h2>
@@ -59,6 +64,12 @@ async function Matriz({ searchParams }: { searchParams: PageProps<"/">["searchPa
   return <MatrizAlavancasView matriz={matriz} />;
 }
 
+/** " (variação +3 %)" quando há período anterior com variação; texto vazio nos outros casos. */
+function variacaoEntreParenteses(comparacao: Comparacao | undefined): string {
+  if (!comparacao?.disponivel || comparacao.variacao === null) return "";
+  return ` (variação ${formatarVariacao(comparacao.variacao)})`;
+}
+
 async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
   const filtros = filtrosDeObjeto(await searchParams);
   let dados: VisaoGeral;
@@ -68,127 +79,95 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
     return <ErroApi mensagem={(e as Error).message} />;
   }
   const { tamanhoMedioEncomenda: tamanho, pedidosPorOnda, participacaoPorSetor, pedidosMultissetor, abc, volume } = dados;
-  const pedidosDia = formatarNumeroOuNulo(volume.pedidos.porDiaComAtividade);
-  const unidadesDia = formatarNumeroOuNulo(volume.unidades.porDiaComAtividade);
   const temPeriodo = Boolean(filtros.mes || filtros.inicio);
   const tamanhoMedio = formatarNumeroOuNulo(tamanho.valor);
   const porOnda = formatarNumeroOuNulo(pedidosPorOnda.valor);
+  const pedidosDia = formatarNumeroOuNulo(volume.pedidos.porDiaComAtividade);
+  const unidadesDia = formatarNumeroOuNulo(volume.unidades.porDiaComAtividade);
   const multissetor = formatarPercentagemOuNulo(pedidosMultissetor.valor);
   const limitacaoSetor = participacaoPorSetor.limitacao ?? pedidosMultissetor.limitacao;
+  const setores = participacaoPorSetor.setores.map((s) => `${s.setor} ${formatarPercentagem(s.percentagem)}`).join(" · ");
   const resumoAbc = abc.classes.map((c) => `${c.classe} ${formatarNumero(c.referencias)}`).join(" / ");
-  const setores = participacaoPorSetor.setores
-    .map((s) => `${s.setor} ${formatarPercentagem(s.percentagem)}`)
-    .join("; ");
+  const mediana = formatarNumeroOuNulo(tamanho.mediana);
+  const p90 = formatarNumeroOuNulo(tamanho.p90);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <CartaoIndicador titulo="Tamanho médio da encomenda" metadados={tamanho} valorResumo={tamanhoMedio}>
-        <ValorIndicador texto={tamanhoMedio} unidade="un./pedido" />
-        <DetalhesIndicador
-          detalhes={[
-            { rotulo: "Mediana", texto: formatarNumeroOuNulo(tamanho.mediana) },
-            { rotulo: "p90", texto: formatarNumeroOuNulo(tamanho.p90) },
-          ]}
-        />
-      </CartaoIndicador>
+    <div className="space-y-3">
+      <FaixaKpi>
+        <CartaoIndicador
+          titulo="Tamanho médio da encomenda"
+          metadados={tamanho}
+          valorResumo={tamanhoMedio}
+          leitura={`Mediana ${mediana ?? "sem dados"} un.; p90 ${p90 ?? "sem dados"} un.`}
+        >
+          <ValorIndicador texto={tamanhoMedio} unidade="un./pedido" />
+        </CartaoIndicador>
 
-      <CartaoIndicador titulo="Pedidos por onda" metadados={pedidosPorOnda} valorResumo={porOnda}>
-        <ValorIndicador texto={porOnda} unidade="pedidos/onda" />
-        <DetalhesIndicador
-          detalhes={[
-            { rotulo: "Mediana", texto: formatarNumeroOuNulo(pedidosPorOnda.mediana) },
-            { rotulo: "Ondas com 1 pedido", texto: formatarNumero(pedidosPorOnda.ondasComUmPedido) },
-            { rotulo: "Ondas", texto: formatarNumero(pedidosPorOnda.ondas) },
-          ]}
-        />
-      </CartaoIndicador>
+        <CartaoIndicador
+          titulo="Pedidos por onda"
+          metadados={pedidosPorOnda}
+          valorResumo={porOnda}
+          leitura={
+            `${formatarNumero(pedidosPorOnda.ondasComUmPedido)} de ${formatarNumero(pedidosPorOnda.ondas)} ondas com 1 só ` +
+            `pedido; mediana ${formatarNumeroOuNulo(pedidosPorOnda.mediana) ?? "sem dados"}.`
+          }
+        >
+          <ValorIndicador texto={porOnda} unidade="pedidos/onda" />
+        </CartaoIndicador>
 
-      <CartaoIndicador titulo="Pedidos por dia com atividade" metadados={volume.pedidos} valorResumo={pedidosDia}>
-        <ValorIndicador texto={pedidosDia} unidade="pedidos/dia" />
-        <DetalhesIndicador
-          detalhes={[
-            { rotulo: "Pedidos válidos", texto: formatarNumeroOuNulo(volume.pedidos.valor) },
-            { rotulo: "Dias com atividade", texto: formatarNumero(volume.pedidos.diasComAtividade) },
-          ]}
-        />
-      </CartaoIndicador>
+        <CartaoIndicador
+          titulo="Volume por dia com atividade"
+          metadados={volume.pedidos}
+          valorResumo={pedidosDia}
+          leitura={
+            `${formatarNumeroOuNulo(volume.pedidos.valor) ?? "sem dados"} pedidos e ` +
+            `${formatarNumeroOuNulo(volume.unidades.valor) ?? "sem dados"} un. em ` +
+            `${formatarNumero(volume.pedidos.diasComAtividade)} dias; ${unidadesDia ?? "sem dados"} un./dia` +
+            `${variacaoEntreParenteses(volume.unidades.comparacao)}.`
+          }
+        >
+          <ValorIndicador texto={pedidosDia} unidade="pedidos/dia" />
+        </CartaoIndicador>
 
-      <CartaoIndicador titulo="Unidades por dia com atividade" metadados={volume.unidades} valorResumo={unidadesDia}>
-        <ValorIndicador texto={unidadesDia} unidade="un./dia" />
-        <DetalhesIndicador
-          detalhes={[
-            { rotulo: "Unidades", texto: formatarNumeroOuNulo(volume.unidades.valor) },
-            { rotulo: "Dias com atividade", texto: formatarNumero(volume.unidades.diasComAtividade) },
-          ]}
-        />
-      </CartaoIndicador>
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <CartaoIndicador
-        titulo="Participação por setor"
-        metadados={participacaoPorSetor}
-        valorResumo={setores || null}
-      >
-        {participacaoPorSetor.setores.length === 0 ? (
-          <ValorIndicador texto={null} />
-        ) : (
-          <ul className="mt-2 space-y-1">
-            {participacaoPorSetor.setores.map((s) => (
-              <li key={s.setor} className="flex items-baseline justify-between gap-4">
-                <span className="text-lg font-semibold">{s.setor}</span>
-                <span className="text-lg font-semibold">{formatarPercentagem(s.percentagem)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CartaoIndicador>
+        <CartaoIndicador titulo="Participação por setor" metadados={participacaoPorSetor} valorResumo={setores || null}>
+          <ValorIndicador texto={setores || null} />
+        </CartaoIndicador>
 
-      <CartaoIndicador
-        titulo="Pedidos multissetor"
-        metadados={pedidosMultissetor}
-        valorResumo={multissetor}
-      >
-        <ValorIndicador texto={multissetor} />
-        <DetalhesIndicador
-          detalhes={[
-            {
-              rotulo: "Pedidos multissetor",
-              texto: `${formatarNumero(pedidosMultissetor.pedidosMultissetor)} de ${formatarNumero(pedidosMultissetor.pedidosValidos)}`,
-            },
-          ]}
-        />
-      </CartaoIndicador>
+        <CartaoIndicador
+          titulo="Pedidos multissetor"
+          metadados={pedidosMultissetor}
+          valorResumo={multissetor}
+          leitura={`${formatarNumero(pedidosMultissetor.pedidosMultissetor)} de ${formatarNumero(pedidosMultissetor.pedidosValidos)} pedidos têm unidades em 2 ou mais setores.`}
+        >
+          <ValorIndicador texto={multissetor} />
+        </CartaoIndicador>
 
-      <CartaoIndicador
-        titulo={temPeriodo ? "Classificação ABC (classe no período)" : "Classificação ABC (classe global)"}
-        metadados={abc} valorResumo={`${resumoAbc} referências`}>
-        <table className="mt-2 w-full text-sm">
-          <thead>
-            <tr className="text-left text-stone-500">
-              <th className="font-normal">Classe</th>
-              <th className="text-right font-normal">Referências</th>
-              <th className="text-right font-normal">% unidades</th>
-            </tr>
-          </thead>
-          <tbody>
+        <CartaoIndicador
+          titulo={temPeriodo ? "Classificação ABC (classe no período)" : "Classificação ABC (classe global)"}
+          metadados={abc}
+          valorResumo={`${resumoAbc} referências`}
+          leitura={
+            abc.totalReferencias === 0
+              ? null
+              : `Unidades: ${abc.classes.map((c) => `${c.classe} ${formatarPercentagemOuNulo(c.percentagemUnidades) ?? "sem dados"}`).join(" · ")}. Clique numa classe para ver as referências.`
+          }
+        >
+          <p className="mt-2 flex flex-wrap gap-x-4 text-3xl font-semibold">
             {abc.classes.map((c) => (
-              <tr key={c.classe}>
-                <td className="py-0.5">
-                  <Link href={`/artigos${consulta({ ...filtros, classe: c.classe })}`} className="font-semibold underline-offset-2 hover:underline">
-                    {c.classe}
-                  </Link>
-                </td>
-                <td className="text-right font-medium">{formatarNumero(c.referencias)}</td>
-                <td className="text-right font-medium">{formatarPercentagemOuNulo(c.percentagemUnidades) ?? "sem dados"}</td>
-              </tr>
+              <Link
+                key={c.classe}
+                href={`/artigos${consulta({ ...filtros, classe: c.classe })}`}
+                title={`${formatarPercentagemOuNulo(c.percentagemUnidades) ?? "sem dados"} das unidades`}
+                className="underline-offset-4 hover:underline"
+              >
+                {c.classe} <span className="text-xl">{formatarNumero(c.referencias)}</span>
+              </Link>
             ))}
-          </tbody>
-        </table>
-      </CartaoIndicador>
-      </div>
+          </p>
+        </CartaoIndicador>
+      </FaixaKpi>
       {limitacaoSetor && (
-        <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">{limitacaoSetor}</p>
+        <p className="rounded border border-amber-300 bg-amber-50 px-3 py-1 text-xs text-amber-900">{limitacaoSetor}</p>
       )}
     </div>
   );
@@ -203,14 +182,4 @@ async function EvolucaoMensal({ searchParams }: { searchParams: PageProps<"/">["
     return <ErroApi mensagem={(e as Error).message} />;
   }
   return <GraficosSerieMensal serie={serie} mesSelecionado={filtros.mes ?? null} />;
-}
-
-function CartoesACarregar() {
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />
-      ))}
-    </div>
-  );
 }

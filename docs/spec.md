@@ -348,6 +348,25 @@ Outros elementos extra, fora das tabelas de indicadores: comparação ABC ↔ AB
 
 ### Páginas (máximo 4: principal + 3 subpáginas)
 
+**Princípio: resumo primeiro, detalhe a pedido** (ticket 19). Cada página abre com o que importa para o negócio, em poucos números fáceis de ler, e só mostra o detalhe quando o diretor o pede.
+
+- **Ordem fixa das secções em todas as páginas:** (1) faixa de KPI; (2) um gráfico ou resumo visual que explique o principal; (3) detalhe.
+- **Primeiro ecrã (1366 × 768, sem scroll):** veem-se a faixa de KPI e o início do resumo visual, sem nenhuma tabela longa aberta. Na Qualidade o resumo cabe inteiro; na Visão geral, em Artigos e em Ondas o resumo começa no fim do primeiro ecrã (cabeçalho e filtros ocupam ~170 px e duas linhas de KPI ~300 px). Decidido não reduzir mais o tamanho do texto, para os números continuarem fáceis de ler (ticket 19).
+- **Faixa de KPI:** 3 a 6 cartões no topo, logo a seguir ao título, com o valor principal de cada indicador e o tooltip (definição, fonte, comparação, exclusões). Cada cartão tem uma **leitura de uma linha**, montada só com valores da API (por exemplo, "51 artigos A, 49 com picking"); não há conclusões escritas à mão, que deixariam de ser verdade quando os filtros mudam.
+- **Regra das 10 linhas:** qualquer tabela com mais de 10 linhas mostra as 10 primeiras, pela ordem do indicador, e um botão "Ver todas (N)" que a abre por inteiro. Se a linha escolhida (por exemplo, a referência do drill-down) estiver fora das primeiras, a tabela abre já inteira. A lista de ondas, que pode ter milhares de linhas, só é montada por inteiro quando se pede (`ondas=todas` no URL).
+- **Detalhe técnico recolhido:** grelhas e decomposições que servem para auditar (grelha referência × mês da estabilidade, listas de localizações não mapeadas, justificações da matriz, linhas de uma onda) ficam num bloco "Ver detalhe" fechado por omissão. Dentro de um "Ver detalhe" a tabela mostra logo todas as linhas, para o detalhe ficar a um só clique.
+- **Nada se perde:** todos os valores continuam acessíveis, no máximo a um clique; os filtros aplicam-se a tudo; o drill-down do ABC continua a funcionar.
+- **Cores de bom/mau só onde há limiares:** as notas da matriz das alavancas (3 = melhor, pelos limiares desta spec) ficam a verde (3), amarelo (2) e vermelho (1), sempre com o número e uma palavra ao lado. Os outros KPI não têm meta definida e ficam sem cor até a equipa decidir e registar os limiares (ticket 20).
+
+Ordem de cada página:
+
+| Página | (1) KPI | (2) Resumo visual | (3) Detalhe |
+|---|---|---|---|
+| Visão geral | Tamanho médio; pedidos por onda; volume por dia com atividade; participação por setor; multissetor; ABC | Matriz das duas alavancas (justificações recolhidas) | Série mensal |
+| Artigos, ABC e localizações | Artigos A; % das unidades na classe A; estabilidade do ABC; não mapeadas; multizona | Seletor de classes A/B/C (refs e % das unidades) | Referências do ABC e tamanhos; prioridade; estabilidade (grelha recolhida); ABC ↔ ABCCOD; zonas |
+| Ondas e pedidos | Pedidos divididos; ocupação; paragens; localizações por onda; ondas incompletas simultâneas | Detalhe da onda (com filtro de onda); gráfico de ocupação | Lista de ondas; divididos e carga por período; carga por operador |
+| Qualidade dos dados | Encomendado não recolhido; sem correspondência; não mapeadas; duplicados; ligações repartidas | Barra da decomposição de "recolhido < encomendado" | Contagens; não mapeadas (lista recolhida); ligação e tamanhos; limitações; perguntas ao docente |
+
 1. **Visão geral**
    - Os 5 indicadores mínimos.
    - A matriz das duas alavancas, com justificações.

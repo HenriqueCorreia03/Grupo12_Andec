@@ -1,10 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
-import { obterAbc, obterTamanhos, type ReferenciasAbc } from "@/lib/api";
+import { FaixaKpi, FaixaKpiACarregar } from "@/components/faixa-kpi";
+import { TabelaRecolhida } from "@/components/tabela-recolhida";
+import {
+  obterAbc,
+  obterEstabilidade,
+  obterPrioridade,
+  obterTamanhos,
+  obterZonas,
+  type EstabilidadeAbc,
+  type PrioridadeDosArtigos,
+  type ReferenciasAbc,
+  type ZonasDoPicking,
+} from "@/lib/api";
+import { LINHAS_VISIVEIS } from "@/lib/apresentacao";
 import { consulta, filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
-import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
+import { formatarNumero, formatarNumeroOuNulo, formatarPercentagemOuNulo } from "@/lib/formatar";
 import { AbcVersusAbccod } from "./abccod";
 import { EstabilidadeDoAbc } from "./estabilidade";
 import { PrioridadeArtigos } from "./prioridade";
@@ -19,9 +33,15 @@ export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
     <section>
       <h1 className="text-2xl font-semibold">Artigos, ABC e localizações</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Alavanca (a). Clique numa classe para ver as referências e numa referência para ver as unidades por tamanho.
-        Os filtros do painel aplicam-se a tudo nesta página.
+        Alavanca (a). Os indicadores principais primeiro; o detalhe vem por baixo. Clique numa classe para ver as
+        referências e numa referência para ver as unidades por tamanho. Os filtros do painel aplicam-se a tudo nesta página.
       </p>
+      <div className="mt-6">
+        <Suspense fallback={<FaixaKpiACarregar cartoes={5} />}>
+          <IndicadoresDosArtigos searchParams={searchParams} />
+        </Suspense>
+      </div>
+      <h2 className="mt-10 text-lg font-semibold">Classificação ABC e drill-down</h2>
       <Suspense fallback={CARREGAR}>
         <DrillDownAbc searchParams={searchParams} />
       </Suspense>
@@ -40,7 +60,7 @@ export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
       <h2 className="mt-10 text-lg font-semibold">ABC calculado vs ABCCOD do ficheiro de produtos</h2>
       <div className="mt-4">
         <Suspense fallback={CARREGAR}>
-          <AbccodDoDataset searchParams={searchParams} />
+          <ComparacaoAbccod searchParams={searchParams} />
         </Suspense>
       </div>
       <h2 className="mt-10 text-lg font-semibold">Zonas e localizações não mapeadas</h2>
@@ -61,7 +81,7 @@ async function EstabilidadeDoPeriodo({ searchParams }: { searchParams: PageProps
   return <EstabilidadeDoAbc filtros={filtrosDeObjeto(await searchParams)} />;
 }
 
-async function AbccodDoDataset({ searchParams }: { searchParams: PageProps<"/artigos">["searchParams"] }) {
+async function ComparacaoAbccod({ searchParams }: { searchParams: PageProps<"/artigos">["searchParams"] }) {
   return <AbcVersusAbccod filtros={filtrosDeObjeto(await searchParams)} />;
 }
 
@@ -69,12 +89,102 @@ async function ZonasDoPeriodo({ searchParams }: { searchParams: PageProps<"/arti
   return <ParticipacaoZonas filtros={filtrosDeObjeto(await searchParams)} />;
 }
 
+/**
+ * Faixa de KPI da alavanca (a): artigos A, % das unidades na classe A, estabilidade do ABC, localizações não
+ * mapeadas e pedidos multizona. Os pedidos à API são os mesmos das secções de baixo (o Next memoriza-os no pedido).
+ */
+async function IndicadoresDosArtigos({ searchParams }: { searchParams: PageProps<"/artigos">["searchParams"] }) {
+  const filtros = filtrosDeObjeto(await searchParams);
+  let abc: ReferenciasAbc;
+  let prioridade: PrioridadeDosArtigos;
+  let estabilidade: EstabilidadeAbc;
+  let zonas: ZonasDoPicking;
+  try {
+    [abc, prioridade, estabilidade, zonas] = await Promise.all([
+      obterAbc(filtros),
+      obterPrioridade(filtros),
+      obterEstabilidade(filtros),
+      obterZonas(filtros),
+    ]);
+  } catch (e) {
+    return <ErroApi mensagem={(e as Error).message} />;
+  }
+  const { resumoA } = prioridade;
+  const classeA = abc.classes.find((c) => c.classe === "A");
+  const percentagemA = formatarPercentagemOuNulo(classeA?.percentagemUnidades ?? null);
+  const mudam = formatarPercentagemOuNulo(estabilidade.valor);
+  const { naoMapeadas } = zonas.participacaoPorZona;
+  const percentagemNaoMapeadas = formatarPercentagemOuNulo(naoMapeadas.percentagem);
+  const multizona = zonas.pedidosMultizona;
+  const percentagemMultizona = formatarPercentagemOuNulo(multizona.valor);
+  const medianaLocalizacoes = formatarNumeroOuNulo(resumoA.localizacoes.mediana);
+
+  return (
+    <FaixaKpi rotulo="Indicadores principais dos artigos">
+      <CartaoIndicador
+        titulo="Artigos A (classe global)"
+        metadados={prioridade}
+        valorResumo={formatarNumero(resumoA.artigosA)}
+        leitura={
+          `${formatarNumero(resumoA.artigosA)} artigos A, ${formatarNumero(resumoA.artigosAComPicking)} com picking` +
+          (medianaLocalizacoes ? `; mediana de ${medianaLocalizacoes} localizações por artigo A.` : ".")
+        }
+      >
+        <ValorIndicador texto={formatarNumero(resumoA.artigosA)} unidade="artigos" />
+      </CartaoIndicador>
+
+      <CartaoIndicador
+        titulo="Unidades na classe A (no período)"
+        metadados={abc}
+        valorResumo={percentagemA}
+        leitura={
+          classeA
+            ? `${formatarNumero(classeA.referencias)} de ${formatarNumero(abc.totalReferencias)} referências com procura no período são A.`
+            : null
+        }
+      >
+        <ValorIndicador texto={percentagemA} unidade="das unidades" />
+      </CartaoIndicador>
+
+      <CartaoIndicador
+        titulo="Referências que mudam de classe (mês a mês)"
+        metadados={estabilidade}
+        valorResumo={mudam}
+        leitura={
+          `${formatarNumero(estabilidade.mudaram)} mudanças em ${formatarNumero(estabilidade.comparadas)} comparações; ` +
+          `${formatarNumero(estabilidade.combinacoes.excluidas)} combinações referência-mês excluídas (< ${estabilidade.limiarUnidades} un.).`
+        }
+      >
+        <ValorIndicador texto={mudam} />
+      </CartaoIndicador>
+
+      <CartaoIndicador
+        titulo="Localizações não mapeadas"
+        metadados={zonas.participacaoPorZona}
+        valorResumo={percentagemNaoMapeadas}
+        leitura={`${formatarNumero(naoMapeadas.unidades)} un., das quais RC-01: ${formatarNumero(naoMapeadas.rc01Unidades)} un.`}
+      >
+        <ValorIndicador texto={percentagemNaoMapeadas} unidade="do recolhido" />
+      </CartaoIndicador>
+
+      <CartaoIndicador
+        titulo="Pedidos multizona"
+        metadados={multizona}
+        valorResumo={percentagemMultizona}
+        leitura={`${formatarNumero(multizona.pedidosMultizona)} de ${formatarNumero(multizona.pedidosValidos)} pedidos válidos têm unidades em 2 ou mais zonas.`}
+      >
+        <ValorIndicador texto={percentagemMultizona} unidade="dos pedidos" />
+      </CartaoIndicador>
+    </FaixaKpi>
+  );
+}
+
 async function DrillDownAbc({ searchParams }: { searchParams: PageProps<"/artigos">["searchParams"] }) {
   const params = await searchParams;
   const filtros = filtrosDeObjeto(params);
   // `detalhe` é a referência escolhida na tabela (painel de tamanhos); `referencia` é o filtro global.
   const detalhe = typeof params.detalhe === "string" && params.detalhe !== "" ? params.detalhe : null;
-  // A tabela mostra só as primeiras referências; `todas=1` mostra as 208.
+  // A tabela mostra só as primeiras 10 referências; `todas=1` abre-a já com todas.
   const todas = params.todas === "1";
 
   let abc: ReferenciasAbc;
@@ -89,7 +199,7 @@ async function DrillDownAbc({ searchParams }: { searchParams: PageProps<"/artigo
   }
 
   return (
-    <div className="mt-6 space-y-6">
+    <div className="mt-4 space-y-6">
       <SeletorClasse abc={abc} filtros={filtros} />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <TabelaReferencias abc={abc} filtros={filtros} detalhe={detalhe} todas={todas} />
@@ -137,9 +247,7 @@ function SeletorClasse({ abc, filtros }: { abc: ReferenciasAbc; filtros: Filtros
   );
 }
 
-/** Referências visíveis por omissão na tabela (as de maior procura, porque estão ordenadas por unidades). */
-const REFERENCIAS_VISIVEIS = 20;
-
+/** Referências do âmbito, pela ordem do ABC do período: as primeiras 10 e "Ver todas (N)" (ticket 19). */
 function TabelaReferencias({
   abc,
   filtros,
@@ -152,21 +260,25 @@ function TabelaReferencias({
   todas: boolean;
 }) {
   const classe = abc.classeSelecionada;
-  const primeiras = abc.referencias.slice(0, REFERENCIAS_VISIVEIS);
-  // Se a referência aberta no painel não está entre as primeiras, mostra todas para ela não desaparecer.
-  const mostrarTodas = todas || (detalhe !== null && !primeiras.some((r) => r.referencia === detalhe));
-  const visiveis = mostrarTodas ? abc.referencias : primeiras;
   if (abc.referencias.length === 0) {
     return <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-500">sem dados</p>;
   }
+  // Se a referência aberta no painel não está entre as primeiras, a tabela abre inteira para ela não desaparecer.
+  const posicaoDetalhe = detalhe === null ? -1 : abc.referencias.findIndex((r) => r.referencia === detalhe);
+  const abertaInicial = todas || posicaoDetalhe >= LINHAS_VISIVEIS;
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
-      <table className="w-full min-w-[34rem] text-sm">
-        <caption className="px-4 py-3 text-left text-sm font-medium text-stone-500">
-          {classe ? `Referências da classe global ${classe}` : "Todas as referências"} ({formatarNumero(abc.referencias.length)}),
-          por unidades encomendadas no período
-        </caption>
-        <thead className="border-y border-stone-200 bg-stone-50 text-left text-stone-500">
+      <TabelaRecolhida
+        key={abertaInicial ? "aberta" : "recolhida"}
+        abertaInicial={abertaInicial}
+        classeTabela="w-full min-w-[34rem] text-sm"
+        legenda={
+          <>
+            {classe ? `Referências da classe global ${classe}` : "Todas as referências"} ({formatarNumero(abc.referencias.length)}),
+            por unidades encomendadas no período
+          </>
+        }
+        cabecalho={
           <tr>
             <th className="px-4 py-2 font-normal">#</th>
             <th className="px-4 py-2 font-normal">Referência</th>
@@ -175,42 +287,29 @@ function TabelaReferencias({
             <th className="px-4 py-2 text-center font-normal">Classe no período</th>
             <th className="px-4 py-2 text-center font-normal">Classe global</th>
           </tr>
-        </thead>
-        <tbody>
-          {visiveis.map((r) => {
-            const ativa = r.referencia === detalhe;
-            return (
-              <tr key={r.referencia} className={ativa ? "bg-amber-50" : "border-t border-stone-100"}>
-                <td className="px-4 py-1.5 text-stone-500">{r.posicao ?? "—"}</td>
-                <td className="px-4 py-1.5">
-                  <Link
-                    href={`/artigos${consulta(filtros, { detalhe: r.referencia })}`}
-                    aria-current={ativa ? "true" : undefined}
-                    className="font-medium underline-offset-2 hover:underline"
-                  >
-                    {r.referencia}
-                  </Link>
-                </td>
-                <td className="px-4 py-1.5 text-right">{formatarNumero(r.unidades)}</td>
-                <td className="px-4 py-1.5 text-right">{formatarPercentagemOuNulo(r.acumuladoAntes) ?? "—"}</td>
-                <td className="px-4 py-1.5 text-center font-semibold">{r.classePeriodo ?? "—"}</td>
-                <td className="px-4 py-1.5 text-center font-semibold">{r.classe}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      {abc.referencias.length > REFERENCIAS_VISIVEIS && (
-        <p className="border-t border-stone-200 px-4 py-3 text-sm text-stone-700">
-          A mostrar {formatarNumero(visiveis.length)} de {formatarNumero(abc.referencias.length)} referências.{" "}
-          <Link
-            href={`/artigos${consulta(filtros, { detalhe, todas: mostrarTodas ? null : "1" })}`}
-            className="font-medium underline underline-offset-2"
-          >
-            {mostrarTodas ? "Mostrar só as primeiras 20" : `Ver todas as ${formatarNumero(abc.referencias.length)}`}
-          </Link>
-        </p>
-      )}
+        }
+        linhas={abc.referencias.map((r) => {
+          const ativa = r.referencia === detalhe;
+          return (
+            <tr key={r.referencia} className={ativa ? "bg-amber-50" : "border-t border-stone-100"}>
+              <td className="px-4 py-1.5 text-stone-500">{r.posicao ?? "—"}</td>
+              <td className="px-4 py-1.5">
+                <Link
+                  href={`/artigos${consulta(filtros, { detalhe: r.referencia, todas: todas ? "1" : null })}`}
+                  aria-current={ativa ? "true" : undefined}
+                  className="font-medium underline-offset-2 hover:underline"
+                >
+                  {r.referencia}
+                </Link>
+              </td>
+              <td className="px-4 py-1.5 text-right">{formatarNumero(r.unidades)}</td>
+              <td className="px-4 py-1.5 text-right">{formatarPercentagemOuNulo(r.acumuladoAntes) ?? "—"}</td>
+              <td className="px-4 py-1.5 text-center font-semibold">{r.classePeriodo ?? "—"}</td>
+              <td className="px-4 py-1.5 text-center font-semibold">{r.classe}</td>
+            </tr>
+          );
+        })}
+      />
     </div>
   );
 }

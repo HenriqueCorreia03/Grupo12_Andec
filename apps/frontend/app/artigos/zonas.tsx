@@ -1,5 +1,7 @@
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
+import { TabelaRecolhida } from "@/components/tabela-recolhida";
+import { VerDetalhe } from "@/components/ver-detalhe";
 import { obterZonas, type ZonasDoPicking } from "@/lib/api";
 import type { FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagem, formatarPercentagemOuNulo } from "@/lib/formatar";
@@ -64,14 +66,27 @@ export async function ParticipacaoZonas({ filtros }: { filtros: FiltrosUrl }) {
             <span className="font-semibold">RC-01: {formatarNumero(naoMapeadas.rc01Unidades)} un.</span> (em separado).
           </p>
           {naoMapeadas.localizacoes.length > 0 && (
-            <ul className="mt-3 max-h-48 space-y-0.5 overflow-auto text-sm">
-              {naoMapeadas.localizacoes.map((l) => (
-                <li key={l.localizacao} className="flex justify-between gap-4">
-                  <span className={l.localizacao === "RC-01" ? "font-semibold" : ""}>{l.localizacao}</span>
-                  <span className="font-medium">{formatarNumero(l.unidades)}</span>
-                </li>
-              ))}
-            </ul>
+            <VerDetalhe
+              titulo={`${formatarNumero(naoMapeadas.localizacoes.length)} localizações não mapeadas`}
+              className="mt-3"
+            >
+              <TabelaRecolhida
+                semLimite
+                classeCabecalho="text-left text-stone-500"
+                cabecalho={
+                  <tr>
+                    <th className="px-4 py-1 font-normal">Localização</th>
+                    <th className="px-4 py-1 text-right font-normal">Unidades</th>
+                  </tr>
+                }
+                linhas={naoMapeadas.localizacoes.map((l) => (
+                  <tr key={l.localizacao} className="border-t border-stone-100">
+                    <td className={`px-4 py-0.5 ${l.localizacao === "RC-01" ? "font-semibold" : ""}`}>{l.localizacao}</td>
+                    <td className="px-4 py-0.5 text-right font-medium">{formatarNumero(l.unidades)}</td>
+                  </tr>
+                ))}
+              />
+            </VerDetalhe>
           )}
         </CartaoIndicador>
       </div>

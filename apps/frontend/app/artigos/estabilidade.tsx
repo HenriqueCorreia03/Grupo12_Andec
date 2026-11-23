@@ -1,5 +1,7 @@
 import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
+import { TabelaRecolhida } from "@/components/tabela-recolhida";
+import { VerDetalhe } from "@/components/ver-detalhe";
 import { type ClasseAbc, type EstabilidadeAbc, obterEstabilidade } from "@/lib/api";
 import type { FiltrosUrl } from "@/lib/filtros";
 import { formatarMes, formatarMesCurto, formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
@@ -25,7 +27,7 @@ export async function EstabilidadeDoAbc({ filtros }: { filtros: FiltrosUrl }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <CartaoIndicador titulo="Referências que mudam de classe (mês a mês)" metadados={corpo} valorResumo={valor}>
           <ValorIndicador texto={valor} />
           <p className="mt-1 text-sm text-stone-600">
@@ -68,17 +70,16 @@ export async function EstabilidadeDoAbc({ filtros }: { filtros: FiltrosUrl }) {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
+      <VerDetalhe titulo={`classe de cada referência em cada mês (${formatarNumero(corpo.referencias.length)} referências)`}>
         {corpo.referencias.length === 0 ? (
           <p className="p-5 text-sm text-stone-500">sem dados</p>
         ) : (
-          <div className="max-h-[28rem] overflow-auto">
-            <table className="w-full text-sm">
-              <caption className="px-4 py-3 text-left text-sm font-medium text-stone-500">
-                Classe de cada referência em cada mês ({formatarNumero(corpo.referencias.length)} referências, pela ordem
-                do ABC global)
-              </caption>
-              <thead className="sticky top-0 border-y border-stone-200 bg-stone-50 text-stone-500">
+          <div className="overflow-x-auto">
+            <TabelaRecolhida
+              semLimite
+              legenda="Classe de cada referência em cada mês, pela ordem do ABC global"
+              classeCabecalho="border-y border-stone-200 bg-stone-50 text-stone-500"
+              cabecalho={
                 <tr>
                   <th className="px-3 py-2 text-left font-normal">Referência</th>
                   <th className="px-3 py-2 font-normal">Global</th>
@@ -88,39 +89,37 @@ export async function EstabilidadeDoAbc({ filtros }: { filtros: FiltrosUrl }) {
                     </th>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {corpo.referencias.map((r) => (
-                  <tr key={r.referencia} className="border-t border-stone-100">
-                    <td className="px-3 py-1 font-medium">{r.referencia}</td>
-                    <td className="px-3 py-1 text-center font-semibold">{r.classeGlobal}</td>
-                    {r.meses.map((m) => (
-                      <td
-                        key={m.mes}
-                        title={`${formatarMes(m.mes)}: ${formatarNumero(m.unidades)} un.`}
-                        className={
-                          "px-2 py-1 text-center " +
-                          (m.classe === null
-                            ? "text-stone-300"
-                            : m.excluida
-                              ? "text-stone-500"
-                              : `${FUNDO[m.classe]} font-semibold`)
-                        }
-                      >
-                        {m.classe === null ? "·" : m.excluida ? `${m.classe}*` : m.classe}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              }
+              linhas={corpo.referencias.map((r) => (
+                <tr key={r.referencia} className="border-t border-stone-100">
+                  <td className="px-3 py-1 font-medium">{r.referencia}</td>
+                  <td className="px-3 py-1 text-center font-semibold">{r.classeGlobal}</td>
+                  {r.meses.map((m) => (
+                    <td
+                      key={m.mes}
+                      title={`${formatarMes(m.mes)}: ${formatarNumero(m.unidades)} un.`}
+                      className={
+                        "px-2 py-1 text-center " +
+                        (m.classe === null
+                          ? "text-stone-300"
+                          : m.excluida
+                            ? "text-stone-500"
+                            : `${FUNDO[m.classe]} font-semibold`)
+                      }
+                    >
+                      {m.classe === null ? "·" : m.excluida ? `${m.classe}*` : m.classe}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            />
           </div>
         )}
         <p className="border-t border-stone-200 px-4 py-2 text-xs text-stone-500">
           * Menos de {limiar} un. no mês: fora das comparações. · Sem procura no mês. ABC de cada mês sobre todas as
           referências.
         </p>
-      </div>
+      </VerDetalhe>
     </div>
   );
 }

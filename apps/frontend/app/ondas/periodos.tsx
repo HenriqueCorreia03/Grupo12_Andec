@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ErroApi } from "@/components/erro-api";
+import { TabelaRecolhida } from "@/components/tabela-recolhida";
 import {
   obterCarga,
   obterDividosPorPeriodo,
@@ -26,7 +27,7 @@ export async function PeriodosDaAlavancaB({ filtros }: { filtros: FiltrosUrl }) 
     return <ErroApi mensagem={(e as Error).message} />;
   }
   return (
-    <div className="space-y-8 sm:col-span-2 lg:col-span-3">
+    <div className="space-y-8">
       <DividosPorPeriodoSecao dados={divididos} />
       <CargaSecao dados={carga} />
     </div>
@@ -75,10 +76,12 @@ function TabelaDivididos({ titulo, linhas, mostrarPorDia = false }: { titulo: st
     );
   }
   return (
-    <div className={`${CARTAO} max-h-96 overflow-auto`}>
+    <div className={CARTAO}>
       <h3 className="text-sm font-medium text-stone-500">{titulo}</h3>
-      <table className="mt-2 w-full text-sm">
-        <thead className="text-left text-stone-500">
+      <TabelaRecolhida
+        classeTabela="mt-2 w-full text-sm"
+        classeCabecalho="text-left text-stone-500"
+        cabecalho={
           <tr>
             <th className="py-1 font-normal">#</th>
             <th className="py-1 font-normal">Período</th>
@@ -86,9 +89,8 @@ function TabelaDivididos({ titulo, linhas, mostrarPorDia = false }: { titulo: st
             <th className="py-1 text-right font-normal">Ocup. média</th>
             {mostrarPorDia && <th className="py-1 text-right font-normal">Por dia</th>}
           </tr>
-        </thead>
-        <tbody>
-          {linhas.map((l, i) => (
+        }
+        linhas={linhas.map((l, i) => (
             <tr key={l.chave} className={`border-t border-stone-100 ${i === 0 ? "bg-amber-50 font-medium" : ""}`}>
               <td className="py-1 text-stone-500">{i + 1}</td>
               <td className="py-1">
@@ -107,8 +109,7 @@ function TabelaDivididos({ titulo, linhas, mostrarPorDia = false }: { titulo: st
               )}
             </tr>
           ))}
-        </tbody>
-      </table>
+      />
     </div>
   );
 }
@@ -202,25 +203,25 @@ function CargaOperador({ operadores, rotulo }: { operadores: { operador: string;
       {operadores.length === 0 ? (
         <p className="mt-2 text-sm text-stone-500">sem dados</p>
       ) : (
-        <div className="mt-2 max-h-72 overflow-auto">
-          <table className="w-full text-sm sm:w-auto">
-            <thead className="text-left text-stone-500">
+        <div className="mt-2 overflow-x-auto">
+          <TabelaRecolhida
+            classeTabela="w-full text-sm sm:w-auto"
+            classeCabecalho="text-left text-stone-500"
+            cabecalho={
               <tr>
                 <th className="py-1 pr-6 font-normal">Operador</th>
                 <th className="py-1 pr-6 text-right font-normal">Unidades</th>
                 <th className="py-1 text-right font-normal">Ondas</th>
               </tr>
-            </thead>
-            <tbody>
-              {operadores.map((o) => (
-                <tr key={o.operador} className="border-t border-stone-100">
-                  <td className="py-1 pr-6">{o.operador}</td>
-                  <td className="py-1 pr-6 text-right">{formatarNumero(o.unidades)}</td>
-                  <td className="py-1 text-right">{formatarNumero(o.ondas)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            }
+            linhas={operadores.map((o) => (
+              <tr key={o.operador} className="border-t border-stone-100">
+                <td className="py-1 pr-6">{o.operador}</td>
+                <td className="py-1 pr-6 text-right">{formatarNumero(o.unidades)}</td>
+                <td className="py-1 text-right">{formatarNumero(o.ondas)}</td>
+              </tr>
+            ))}
+          />
         </div>
       )}
       <p className="mt-2 text-xs text-stone-500">

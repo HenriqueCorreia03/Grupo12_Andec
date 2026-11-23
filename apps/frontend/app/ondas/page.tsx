@@ -1,58 +1,67 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
+import { CartaoIndicador, ValorIndicador } from "@/components/cartao-indicador";
 import { ErroApi } from "@/components/erro-api";
+import { FaixaKpi, FaixaKpiACarregar } from "@/components/faixa-kpi";
 import { obterOndasEPedidos, type OndasEPedidos } from "@/lib/api";
 import { filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
 import { DetalheDaOnda } from "./detalhe-onda";
 import { OndasIncompletasCartao } from "./ondas-incompletas";
 import { PeriodosDaAlavancaB } from "./periodos";
-import { PickingOndas } from "./picking-ondas";
+import { CartoesDePicking, OcupacaoEListaDeOndas } from "./picking-ondas";
 
 export const metadata: Metadata = { title: "Ondas e pedidos" };
 
+/**
+ * Ondas e pedidos (ticket 19, "resumo primeiro, detalhe a pedido"): (1) faixa de KPI, (2) detalhe da onda do filtro
+ * e gráfico de ocupação, (3) lista de ondas e rankings por período.
+ */
 export default function OndasPage({ searchParams }: PageProps<"/ondas">) {
   return (
     <section>
       <h1 className="text-2xl font-semibold">Ondas e pedidos</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Alavanca (b). Indicadores calculados no servidor. Clique num cartão para ver a definição.
+        Alavanca (b). Os indicadores principais primeiro; o detalhe vem por baixo. Clique num cartão para ver a definição.
       </p>
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Suspense fallback={<div className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
-          <IndicadoresDasOndas searchParams={searchParams} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<div className="mt-6"><FaixaKpiACarregar cartoes={5} /></div>}>
+        <ConteudoDasOndas searchParams={searchParams} />
+      </Suspense>
     </section>
   );
 }
 
-async function IndicadoresDasOndas({ searchParams }: { searchParams: PageProps<"/ondas">["searchParams"] }) {
+async function ConteudoDasOndas({ searchParams }: { searchParams: PageProps<"/ondas">["searchParams"] }) {
   const params = await searchParams;
   const filtros = filtrosDeObjeto(params);
-  // A lista de ondas mostra só as incompletas por omissão; `lista=todas` mostra todas.
+  // A lista de ondas mostra só as incompletas por omissão (`lista=todas` mostra todas) e só as primeiras 10
+  // (`ondas=todas` abre a lista inteira, carregada só quando se pede).
   const lista = params.lista === "todas" ? "todas" : "incompletas";
+  const listaAberta = params.ondas === "todas";
+  const { onda } = filtros;
+  const semOnda = onda === undefined;
   return (
     <>
-      {filtros.onda !== undefined && (
-        <div className="sm:col-span-2 lg:col-span-3">
-          <DetalheDaOnda onda={filtros.onda} filtros={filtros} />
+      <div className="mt-6">
+        <FaixaKpi rotulo="Indicadores principais das ondas">
+          <PedidosDivididosCartao filtros={filtros} />
+          <CartoesDePicking filtros={filtros} />
+          {semOnda && <OndasIncompletasCartao filtros={filtros} />}
+        </FaixaKpi>
+      </div>
+      {onda !== undefined && (
+        <div className="mt-8">
+          <DetalheDaOnda onda={onda} filtros={filtros} />
         </div>
       )}
-      <PedidosDivididosCartao filtros={filtros} />
-      <PickingOndas
-        filtros={filtros}
-        lista={lista}
-        aoLadoDosCartoes={
-          filtros.onda === undefined && (
-            <div className="sm:col-span-2">
-              <OndasIncompletasCartao filtros={filtros} />
-            </div>
-          )
-        }
-      />
-      {filtros.onda === undefined && <PeriodosDaAlavancaB filtros={filtros} />}
+      <div className="mt-8 space-y-4">
+        <OcupacaoEListaDeOndas filtros={filtros} lista={lista} listaAberta={listaAberta} />
+      </div>
+      {semOnda && (
+        <div className="mt-10">
+          <PeriodosDaAlavancaB filtros={filtros} />
+        </div>
+      )}
     </>
   );
 }
@@ -66,25 +75,21 @@ async function PedidosDivididosCartao({ filtros }: { filtros: FiltrosUrl }) {
   }
   const d = dados.pedidosDivididos;
   const percentagem = formatarPercentagemOuNulo(d.valor);
+  const evitaveis =
+    d.percentagemAte24 === null
+      ? ""
+      : `; ${formatarNumero(d.divididosAte24)} evitáveis (≤ 24 un., ${formatarPercentagemOuNulo(d.percentagemAte24)} dos pedidos)`;
   return (
-    <CartaoIndicador titulo="Pedidos divididos entre ondas" metadados={d} valorResumo={percentagem}>
+    <CartaoIndicador
+      titulo="Pedidos divididos entre ondas"
+      metadados={d}
+      valorResumo={percentagem}
+      leitura={
+        `${formatarNumero(d.pedidosDivididos)} de ${formatarNumero(d.pedidosValidos)} pedidos; ` +
+        `${formatarNumero(d.divididosMaisDe24)} inevitáveis (> 24 un.)${evitaveis}.`
+      }
+    >
       <ValorIndicador texto={percentagem} />
-      <DetalhesIndicador
-        detalhes={[
-          {
-            rotulo: "Pedidos divididos",
-            texto: `${formatarNumero(d.pedidosDivididos)} de ${formatarNumero(d.pedidosValidos)}`,
-          },
-          { rotulo: "Com > 24 un. (inevitáveis)", texto: formatarNumero(d.divididosMaisDe24) },
-          {
-            rotulo: "Com ≤ 24 un. (evitáveis)",
-            texto:
-              d.percentagemAte24 === null
-                ? null
-                : `${formatarNumero(d.divididosAte24)} (${formatarPercentagemOuNulo(d.percentagemAte24)} dos pedidos)`,
-          },
-        ]}
-      />
     </CartaoIndicador>
   );
 }

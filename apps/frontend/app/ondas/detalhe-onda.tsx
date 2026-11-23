@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ErroApi } from "@/components/erro-api";
+import { TabelaRecolhida } from "@/components/tabela-recolhida";
 import { obterDetalheOnda, type DetalheOnda } from "@/lib/api";
 import { consulta, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
@@ -56,18 +57,22 @@ export async function DetalheDaOnda({ onda, filtros }: { onda: string; filtros: 
 
       <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section>
-          <h3 className="text-sm font-medium text-stone-500">Pedidos</h3>
-          <table className="mt-2 w-full text-sm">
-            <thead className="text-left text-stone-500">
-              <tr>
-                <th className="py-1 font-normal">Pedido</th>
-                <th className="py-1 text-right font-normal">Nesta onda</th>
-                <th className="py-1 text-right font-normal">Total</th>
-                <th className="py-1 pl-3 font-normal">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {detalhe.pedidos.map((p) => (
+          <h3 className="text-sm font-medium text-stone-500">Pedidos ({formatarNumero(detalhe.pedidos.length)})</h3>
+          {detalhe.pedidos.length === 0 ? (
+            <p className="mt-2 text-sm text-stone-500">sem dados</p>
+          ) : (
+            <TabelaRecolhida
+              classeTabela="mt-2 w-full text-sm"
+              classeCabecalho="text-left text-stone-500"
+              cabecalho={
+                <tr>
+                  <th className="py-1 font-normal">Pedido</th>
+                  <th className="py-1 text-right font-normal">Nesta onda</th>
+                  <th className="py-1 text-right font-normal">Total</th>
+                  <th className="py-1 pl-3 font-normal">Estado</th>
+                </tr>
+              }
+              linhas={detalhe.pedidos.map((p) => (
                 <tr key={p.pedido} className="border-t border-stone-100">
                   <td className="py-1 font-medium">{p.pedido}</td>
                   <td className="py-1 text-right">{formatarNumero(p.unidades)} un.</td>
@@ -83,27 +88,33 @@ export async function DetalheDaOnda({ onda, filtros }: { onda: string; filtros: 
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-          {detalhe.pedidos.length === 0 && <p className="mt-2 text-sm text-stone-500">sem dados</p>}
+            />
+          )}
         </section>
 
         <section>
-          <h3 className="text-sm font-medium text-stone-500">Localizações e zonas</h3>
+          <h3 className="text-sm font-medium text-stone-500">Localizações e zonas ({formatarNumero(detalhe.localizacoes.length)})</h3>
           {detalhe.localizacoes.length === 0 ? (
             <p className="mt-2 text-sm text-stone-500">sem picking: a onda não tem localizações.</p>
           ) : (
-            <ul className="mt-2 space-y-0.5 text-sm">
-              {detalhe.localizacoes.map((l) => (
-                <li key={l.localizacao} className="flex justify-between gap-4">
-                  <span>
-                    {l.localizacao}{" "}
-                    <span className="text-stone-500">({l.zona === null ? "não mapeada" : `zona ${l.zona}`})</span>
-                  </span>
-                  <span className="font-medium">{formatarNumero(l.unidades)} un.</span>
-                </li>
+            <TabelaRecolhida
+              classeTabela="mt-2 w-full text-sm"
+              classeCabecalho="text-left text-stone-500"
+              cabecalho={
+                <tr>
+                  <th className="py-1 font-normal">Localização</th>
+                  <th className="py-1 font-normal">Zona</th>
+                  <th className="py-1 text-right font-normal">Unidades</th>
+                </tr>
+              }
+              linhas={detalhe.localizacoes.map((l) => (
+                <tr key={l.localizacao} className="border-t border-stone-100">
+                  <td className="py-0.5">{l.localizacao}</td>
+                  <td className="py-0.5 text-stone-500">{l.zona === null ? "não mapeada" : `zona ${l.zona}`}</td>
+                  <td className="py-0.5 text-right font-medium">{formatarNumero(l.unidades)} un.</td>
+                </tr>
               ))}
-            </ul>
+            />
           )}
           {detalhe.zonas.length > 0 && (
             <p className="mt-2 text-sm text-stone-600">

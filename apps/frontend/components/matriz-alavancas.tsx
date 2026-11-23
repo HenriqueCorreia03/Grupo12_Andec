@@ -20,7 +20,7 @@ export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
   ];
 
   return (
-    <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+    <article className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
       <h2 className="text-lg font-semibold">Matriz das duas alavancas</h2>
       <p className="mt-1 text-sm text-stone-600">{matriz.nota}</p>
       {matriz.filtrosNaoAplicaveis.length > 0 && (
@@ -29,7 +29,7 @@ export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
         </p>
       )}
 
-      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
         {linhas.map(({ id, nome, alavanca }) => (
           <section key={id} aria-label={nome} className="rounded-lg border border-stone-200 bg-stone-50 p-4">
             <h3 className="font-semibold">{nome}</h3>
@@ -50,6 +50,15 @@ export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
       </div>
       <p className="mt-3 text-sm text-stone-700">
         <span className="font-medium">Leitura das notas</span> (3 = melhor em cada critério): {leitura(a, b)}
+      </p>
+      <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-600">
+        <span>Cores pelos limiares da spec:</span>
+        {([3, 2, 1] as const).map((n) => (
+          <span key={n} className="flex items-center gap-1">
+            <span className={`inline-block h-3 w-3 rounded-sm border ${COR_DA_NOTA[n].fundo}`} />
+            {n} = {COR_DA_NOTA[n].palavra}
+          </span>
+        ))}
       </p>
 
       <details className="mt-4 rounded border border-stone-200 p-3">
@@ -90,14 +99,28 @@ export function MatrizAlavancasView({ matriz }: { matriz: MatrizAlavancas }) {
   );
 }
 
-/** Nota 1–3 em destaque, com o valor que a justifica por baixo. */
+/**
+ * Cor de cada nota da matriz (ticket 19): a escala vem dos limiares da spec, devolvidos pela API, com 3 = melhor em
+ * todos os critérios (no esforço, 3 = esforço baixo). A cor nunca vai sozinha: o número e o valor ficam ao lado.
+ */
+const COR_DA_NOTA: Record<NotaMatriz, { fundo: string; texto: string; palavra: string }> = {
+  3: { fundo: "border-emerald-300 bg-emerald-50", texto: "text-emerald-800", palavra: "melhor" },
+  2: { fundo: "border-amber-300 bg-amber-50", texto: "text-amber-800", palavra: "intermédia" },
+  1: { fundo: "border-rose-300 bg-rose-50", texto: "text-rose-800", palavra: "pior" },
+};
+
+/** Nota 1–3 em destaque, com a cor da escala e o valor que a justifica por baixo. */
 function NotaGrande({ rotulo, nota, detalhe }: { rotulo: string; nota: NotaMatriz | null; detalhe: string }) {
+  const cor = nota === null ? null : COR_DA_NOTA[nota];
   return (
-    <div>
+    <div className={`rounded border px-2 py-1.5 ${cor ? cor.fundo : "border-stone-200 bg-white"}`}>
       <dt className="text-xs text-stone-600">{rotulo}</dt>
-      <dd>
-        <span className="block text-4xl font-semibold leading-none">{nota ?? "—"}</span>
-        <span className="mt-1 block text-xs text-stone-600">{detalhe}</span>
+      <dd title={cor ? `Nota ${nota} (${cor.palavra})` : "Sem nota"}>
+        <span className={`block text-4xl font-semibold leading-none ${cor ? cor.texto : ""}`}>{nota ?? "—"}</span>
+        <span className="mt-1 block text-xs text-stone-700">
+          {detalhe}
+          {cor && <span className="text-stone-500"> · {cor.palavra}</span>}
+        </span>
       </dd>
     </div>
   );
@@ -119,34 +142,6 @@ function leitura(a: NotasDaAlavanca, b: NotasDaAlavanca): string {
 
 function percentagem(valor: number | null): string {
   return formatarPercentagemOuNulo(valor) ?? "sem dados";
-}
-
-function Nota({ nota }: { nota: NotaMatriz | null }) {
-  return <span className="text-2xl font-semibold">{nota ?? "—"}</span>;
-}
-
-function CelulaMedida({ criterio }: { criterio: CriterioMedido }) {
-  return (
-    <div>
-      <Nota nota={criterio.nota} />
-      <span className="ml-2 text-stone-600">{percentagem(criterio.valor)}</span>
-      {criterio.avisoLimiar && (
-        <p className="mt-1 rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-900">
-          ⚠ {criterio.avisoLimiar}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function CelulaEsforco({ esforco }: { esforco: EsforcoMatriz }) {
-  return (
-    <div>
-      <Nota nota={esforco.nota} />
-      <span className="ml-2 text-stone-600">{esforco.rotulo}</span>
-      <p className="mt-1 text-xs text-stone-500">{esforco.origem}, não é medido</p>
-    </div>
-  );
 }
 
 function Justificacao({

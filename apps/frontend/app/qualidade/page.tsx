@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { ErroApi } from "@/components/erro-api";
+import { CartaoResumo, FaixaKpi } from "@/components/faixa-kpi";
+import { TabelaRecolhida } from "@/components/tabela-recolhida";
+import { VerDetalhe } from "@/components/ver-detalhe";
 import { obterQualidade, type Qualidade } from "@/lib/api";
 import { filtrosDeObjeto } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
@@ -13,7 +16,7 @@ export default function QualidadePage({ searchParams }: PageProps<"/qualidade">)
       <h1 className="text-2xl font-semibold">Qualidade dos dados e limitações</h1>
       <p className="mt-1 text-sm text-stone-500">
         Exclusões, decomposições e limitações do dataset completo, calculadas no servidor a partir dos CSV carregados
-        pelo ETL.
+        pelo ETL. Os números principais primeiro; o detalhe vem por baixo.
       </p>
       <Suspense fallback={<div className="mt-6 h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
         <ConteudoQualidade searchParams={searchParams} />
@@ -36,6 +39,7 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
   }
   const { contagens: c, recolhidoVsEncomendado: r, naoMapeadas, ligacoesRepartidas, escalaPorConfirmar } = q;
   const pct = (valor: number | null) => formatarPercentagemOuNulo(valor) ?? "sem dados";
+  const rc01 = naoMapeadas.localizacoes.find((l) => l.localizacao === "RC-01");
 
   return (
     <>
@@ -46,7 +50,47 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
         </p>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mt-6">
+        <FaixaKpi rotulo="Números principais da qualidade dos dados">
+          <CartaoResumo
+            titulo="Encomendado que não foi recolhido"
+            valor={formatarNumero(r.diferenca)}
+            unidade="un."
+            leitura={`Encomendado ${formatarNumero(r.encomendado)} un.; recolhido ${formatarNumero(r.recolhido)} un.`}
+          />
+          <CartaoResumo
+            titulo="Linhas do CO sem correspondência no PW"
+            valor={formatarPercentagemOuNulo(c.percentagemSemCorrespondencia)}
+            leitura={`${formatarNumero(c.linhasSemCorrespondencia)} de ${formatarNumero(c.linhasCO)} linhas do Customer_Order.`}
+          />
+          <CartaoResumo
+            titulo="Recolhido em localizações não mapeadas"
+            valor={formatarPercentagemOuNulo(naoMapeadas.percentagemRecolhido)}
+            unidade="do recolhido"
+            leitura={
+              `${formatarNumero(naoMapeadas.unidades)} un. em ${formatarNumero(naoMapeadas.localizacoes.length)} localizações` +
+              (rc01 ? `; RC-01: ${formatarNumero(rc01.unidades)} un.` : ".")
+            }
+          />
+          <CartaoResumo
+            titulo="Linhas duplicadas (contam como reais)"
+            valor={formatarNumero(c.linhasDuplicadas)}
+            unidade="linhas"
+            leitura={`${formatarNumero(c.unidadesDuplicadas)} un. nessas linhas.`}
+          />
+          <CartaoResumo
+            titulo="Ligações repartidas por várias zonas"
+            valor={formatarPercentagemOuNulo(ligacoesRepartidas.valor)}
+            leitura={`${formatarNumero(ligacoesRepartidas.linhasRepartidas)} de ${formatarNumero(ligacoesRepartidas.linhasLigadas)} linhas ligadas.`}
+          />
+        </FaixaKpi>
+      </div>
+
+      <div className="mt-8">
+        <DecomposicaoDiferenca recolhido={r} />
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Seccao titulo="Exclusões e contagens">
           <Tabela
             linhas={[
@@ -91,26 +135,34 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
             {formatarNumero(naoMapeadas.unidades)} un. recolhidas em {formatarNumero(naoMapeadas.localizacoes.length)}{" "}
             localizações que não existem no Storage_Location ({pct(naoMapeadas.percentagemRecolhido)} do recolhido).
           </p>
-          <div className="mt-2 max-h-72 overflow-y-auto">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-white">
-                <tr className="text-left text-stone-500">
-                  <th className="font-normal">Localização</th>
-                  <th className="text-right font-normal">Unidades</th>
-                  <th className="text-right font-normal">Referências</th>
-                </tr>
-              </thead>
-              <tbody>
-                {naoMapeadas.localizacoes.map((l) => (
-                  <tr key={l.localizacao} className={l.localizacao === "RC-01" ? "font-semibold" : undefined}>
-                    <td className="py-0.5">{l.localizacao}</td>
-                    <td className="text-right">{formatarNumero(l.unidades)}</td>
-                    <td className="text-right">{formatarNumero(l.referencias)}</td>
+          {naoMapeadas.localizacoes.length > 0 && (
+            <VerDetalhe
+              titulo={`lista das ${formatarNumero(naoMapeadas.localizacoes.length)} localizações (RC-01 primeiro)`}
+              className="mt-3"
+            >
+              <TabelaRecolhida
+                semLimite
+                classeCabecalho="text-left text-stone-500"
+                cabecalho={
+                  <tr>
+                    <th className="px-4 py-1 font-normal">Localização</th>
+                    <th className="px-4 py-1 text-right font-normal">Unidades</th>
+                    <th className="px-4 py-1 text-right font-normal">Referências</th>
+                  </tr>
+                }
+                linhas={naoMapeadas.localizacoes.map((l) => (
+                  <tr
+                    key={l.localizacao}
+                    className={`border-t border-stone-100 ${l.localizacao === "RC-01" ? "font-semibold" : ""}`}
+                  >
+                    <td className="px-4 py-0.5">{l.localizacao}</td>
+                    <td className="px-4 py-0.5 text-right">{formatarNumero(l.unidades)}</td>
+                    <td className="px-4 py-0.5 text-right">{formatarNumero(l.referencias)}</td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              />
+            </VerDetalhe>
+          )}
         </Seccao>
 
         <Seccao titulo="Ligação CO ↔ PW e tamanhos">
@@ -173,5 +225,46 @@ function Tabela({ linhas }: { linhas: [string, string][] }) {
         ))}
       </tbody>
     </table>
+  );
+}
+
+/**
+ * Resumo visual da página: a diferença entre encomendado e recolhido, numa barra com as três parcelas pela ordem da
+ * decomposição. As parcelas vêm da API; aqui só se calcula a largura de cada uma.
+ */
+function DecomposicaoDiferenca({ recolhido: r }: { recolhido: Qualidade["recolhidoVsEncomendado"] }) {
+  const parcelas = [
+    { rotulo: "Ondas sem picking", unidades: r.ondasSemPicking, cor: "bg-stone-700" },
+    {
+      rotulo: `Referências nunca recolhidas (${formatarNumero(r.nReferenciasNuncaRecolhidas)})`,
+      unidades: r.referenciasNuncaRecolhidas,
+      cor: "bg-stone-400",
+    },
+    { rotulo: "Sem causa conhecida", unidades: r.semCausaConhecida, cor: "bg-amber-400" },
+  ];
+  return (
+    <figure className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+      <figcaption className="text-sm font-medium text-stone-500">
+        Encomendado que não foi recolhido: {formatarNumero(r.diferenca)} un. ={" "}
+        {parcelas.map((p) => formatarNumero(p.unidades)).join(" + ")}
+      </figcaption>
+      {r.diferenca > 0 ? (
+        <div className="mt-3 flex h-6 overflow-hidden rounded" aria-hidden="true">
+          {parcelas.map((p) => (
+            <span key={p.rotulo} className={p.cor} style={{ width: `${(p.unidades / r.diferenca) * 100}%` }} />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-sm text-stone-500">sem diferença</p>
+      )}
+      <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+        {parcelas.map((p) => (
+          <li key={p.rotulo} className="flex items-center gap-2">
+            <span className={`inline-block h-3 w-3 rounded-sm ${p.cor}`} />
+            {p.rotulo}: <span className="font-medium">{formatarNumero(p.unidades)} un.</span>
+          </li>
+        ))}
+      </ul>
+    </figure>
   );
 }

@@ -11,6 +11,11 @@ interface Props {
   valorResumo: string | null;
   /** Limitação conhecida dos dados, mostrada sempre no cartão. */
   limitacao?: string | null;
+  /**
+   * Leitura de uma linha (ticket 19): frase curta montada só com valores da API (por exemplo, "49 de 51 com picking"),
+   * sem conclusões escritas à mão.
+   */
+  leitura?: string | null;
   children: ReactNode;
 }
 
@@ -20,7 +25,7 @@ interface Props {
  * anterior, a fonte, a nota e as linhas excluídas com o motivo. Fecha com um novo clique, com Esc ou ao clicar fora.
  * Não depende do rato: funciona igual num ecrã tátil.
  */
-export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, children }: Props) {
+export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, leitura, children }: Props) {
   const tooltipId = useId();
   const [aberto, setAberto] = useState(false);
   const cartao = useRef<HTMLElement>(null);
@@ -57,7 +62,7 @@ export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, chi
       ref={cartao}
       onClick={aoClicar}
       onKeyDown={aoCarregar}
-      className={`relative cursor-pointer rounded-lg border bg-white p-5 shadow-sm transition-colors ${
+      className={`relative cursor-pointer rounded-lg border bg-white p-4 shadow-sm transition-colors ${
         aberto ? "border-stone-900" : "border-stone-200 hover:border-stone-400"
       }`}
     >
@@ -76,7 +81,7 @@ export function CartaoIndicador({ titulo, metadados, valorResumo, limitacao, chi
         </button>
       </div>
       {children}
-      <p className="mt-3 text-xs text-stone-500">Fonte: {metadados.fonte}</p>
+      {leitura && <p className="mt-1 text-sm text-stone-600">{leitura}</p>}
       {metadados.filtrosNaoAplicaveis.length > 0 && (
         <p className="mt-2 rounded border border-stone-300 bg-stone-100 px-2 py-1 text-xs text-stone-700">
           Filtro não aplicável a este indicador: {metadados.filtrosNaoAplicaveis.join(", ")}. O valor não o usa.
