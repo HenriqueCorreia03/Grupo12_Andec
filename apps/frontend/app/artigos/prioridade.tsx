@@ -50,7 +50,7 @@ export async function PrioridadeArtigos({ filtros }: { filtros: FiltrosUrl }) {
 
       <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
         {artigos.length === 0 ? (
-          <p className="p-5 text-sm text-stone-400">sem dados</p>
+          <p className="p-5 text-sm text-stone-500">sem dados</p>
         ) : (
           <div className="max-h-[28rem] overflow-y-auto">
             <table className="w-full text-sm">

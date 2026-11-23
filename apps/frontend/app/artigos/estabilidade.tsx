@@ -43,7 +43,7 @@ export async function EstabilidadeDoAbc({ filtros }: { filtros: FiltrosUrl }) {
         <div className="rounded-lg border border-stone-200 bg-white p-5">
           <h3 className="text-sm font-medium text-stone-500">Por transição entre meses consecutivos</h3>
           {corpo.transicoes.length === 0 ? (
-            <p className="mt-2 text-sm text-stone-400">sem dados: o período tem menos de dois meses.</p>
+            <p className="mt-2 text-sm text-stone-500">sem dados: o período tem menos de dois meses.</p>
           ) : (
             <ul className="mt-3 space-y-1 text-sm">
               {corpo.transicoes.map((t) => (
@@ -70,7 +70,7 @@ export async function EstabilidadeDoAbc({ filtros }: { filtros: FiltrosUrl }) {
 
       <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
         {corpo.referencias.length === 0 ? (
-          <p className="p-5 text-sm text-stone-400">sem dados</p>
+          <p className="p-5 text-sm text-stone-500">sem dados</p>
         ) : (
           <div className="max-h-[28rem] overflow-auto">
             <table className="w-full text-sm">
@@ -103,7 +103,7 @@ export async function EstabilidadeDoAbc({ filtros }: { filtros: FiltrosUrl }) {
                           (m.classe === null
                             ? "text-stone-300"
                             : m.excluida
-                              ? "text-stone-400"
+                              ? "text-stone-500"
                               : `${FUNDO[m.classe]} font-semibold`)
                         }
                       >
