@@ -1,0 +1,4 @@
+next-env.d.ts
+# Originais do Hyper3D (pesados); no Git ficam as versões leves.
+public/modelos/**/*-original.glb
+public/modelos/*-hyper3d.glb

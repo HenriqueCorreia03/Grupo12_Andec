@@ -121,6 +121,7 @@ Cada teste escreve os CSV de uma fixture numa pasta temporária, corre o ETL con
 
 - `apps/backend`: NestJS (API, ETL, indicadores). Migrações SQL em `apps/backend/drizzle/`.
 - `apps/frontend`: Next.js (4 páginas: Visão geral; Artigos, ABC e localizações; Ondas e pedidos; Qualidade dos dados).
+- `apps/historia`: site de apresentação "Evidência.", à parte do dashboard (`npm run dev:evidencia`, <http://localhost:3002>). Ver o README da pasta.
 - `docs`: especificação, tickets, ADRs e notas.
 - `data`: CSV originais (fora do Git).
 
