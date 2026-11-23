@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ErroApi } from "@/components/erro-api";
@@ -10,6 +11,8 @@ import { PrioridadeArtigos } from "./prioridade";
 import { ParticipacaoZonas } from "./zonas";
 
 const CARREGAR = <div className="mt-6 h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />;
+
+export const metadata: Metadata = { title: "Artigos, ABC e localizações" };
 
 export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
   return (
@@ -71,6 +74,8 @@ async function DrillDownAbc({ searchParams }: { searchParams: PageProps<"/artigo
   const filtros = filtrosDeObjeto(params);
   // `detalhe` é a referência escolhida na tabela (painel de tamanhos); `referencia` é o filtro global.
   const detalhe = typeof params.detalhe === "string" && params.detalhe !== "" ? params.detalhe : null;
+  // A tabela mostra só as primeiras referências; `todas=1` mostra as 208.
+  const todas = params.todas === "1";
 
   let abc: ReferenciasAbc;
   try {
@@ -86,8 +91,8 @@ async function DrillDownAbc({ searchParams }: { searchParams: PageProps<"/artigo
   return (
     <div className="mt-6 space-y-6">
       <SeletorClasse abc={abc} filtros={filtros} />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <TabelaReferencias abc={abc} filtros={filtros} detalhe={detalhe} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <TabelaReferencias abc={abc} filtros={filtros} detalhe={detalhe} todas={todas} />
         {detalhe && (
           <Suspense fallback={<div className="h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
             <PainelTamanhos referencia={detalhe} filtros={filtros} />
@@ -132,14 +137,31 @@ function SeletorClasse({ abc, filtros }: { abc: ReferenciasAbc; filtros: Filtros
   );
 }
 
-function TabelaReferencias({ abc, filtros, detalhe }: { abc: ReferenciasAbc; filtros: FiltrosUrl; detalhe: string | null }) {
+/** Referências visíveis por omissão na tabela (as de maior procura, porque estão ordenadas por unidades). */
+const REFERENCIAS_VISIVEIS = 20;
+
+function TabelaReferencias({
+  abc,
+  filtros,
+  detalhe,
+  todas,
+}: {
+  abc: ReferenciasAbc;
+  filtros: FiltrosUrl;
+  detalhe: string | null;
+  todas: boolean;
+}) {
   const classe = abc.classeSelecionada;
+  const primeiras = abc.referencias.slice(0, REFERENCIAS_VISIVEIS);
+  // Se a referência aberta no painel não está entre as primeiras, mostra todas para ela não desaparecer.
+  const mostrarTodas = todas || (detalhe !== null && !primeiras.some((r) => r.referencia === detalhe));
+  const visiveis = mostrarTodas ? abc.referencias : primeiras;
   if (abc.referencias.length === 0) {
-    return <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-400">sem dados</p>;
+    return <p className="rounded-lg border border-stone-200 bg-white p-5 text-sm text-stone-500">sem dados</p>;
   }
   return (
-    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
+      <table className="w-full min-w-[34rem] text-sm">
         <caption className="px-4 py-3 text-left text-sm font-medium text-stone-500">
           {classe ? `Referências da classe global ${classe}` : "Todas as referências"} ({formatarNumero(abc.referencias.length)}),
           por unidades encomendadas no período
@@ -155,7 +177,7 @@ function TabelaReferencias({ abc, filtros, detalhe }: { abc: ReferenciasAbc; fil
           </tr>
         </thead>
         <tbody>
-          {abc.referencias.map((r) => {
+          {visiveis.map((r) => {
             const ativa = r.referencia === detalhe;
             return (
               <tr key={r.referencia} className={ativa ? "bg-amber-50" : "border-t border-stone-100"}>
@@ -178,6 +200,17 @@ function TabelaReferencias({ abc, filtros, detalhe }: { abc: ReferenciasAbc; fil
           })}
         </tbody>
       </table>
+      {abc.referencias.length > REFERENCIAS_VISIVEIS && (
+        <p className="border-t border-stone-200 px-4 py-3 text-sm text-stone-700">
+          A mostrar {formatarNumero(visiveis.length)} de {formatarNumero(abc.referencias.length)} referências.{" "}
+          <Link
+            href={`/artigos${consulta(filtros, { detalhe, todas: mostrarTodas ? null : "1" })}`}
+            className="font-medium underline underline-offset-2"
+          >
+            {mostrarTodas ? "Mostrar só as primeiras 20" : `Ver todas as ${formatarNumero(abc.referencias.length)}`}
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
@@ -193,7 +226,7 @@ async function PainelTamanhos({ referencia, filtros }: { referencia: string; fil
     return (
       <aside className="h-fit rounded-lg border border-stone-200 bg-white p-5 text-sm">
         <p className="font-medium">{referencia}</p>
-        <p className="mt-2 text-stone-400">sem procura: a referência não tem unidades encomendadas.</p>
+        <p className="mt-2 text-stone-500">sem procura: a referência não tem unidades encomendadas.</p>
       </aside>
     );
   }
@@ -201,7 +234,7 @@ async function PainelTamanhos({ referencia, filtros }: { referencia: string; fil
     return (
       <aside className="h-fit rounded-lg border border-stone-200 bg-white p-5 text-sm">
         <p className="font-medium">{tamanhos.referencia}</p>
-        <p className="mt-2 text-stone-400">sem dados: a referência não tem unidades encomendadas no período.</p>
+        <p className="mt-2 text-stone-500">sem dados: a referência não tem unidades encomendadas no período.</p>
       </aside>
     );
   }

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { CartaoIndicador, DetalhesIndicador, ValorIndicador } from "@/components/cartao-indicador";
@@ -13,22 +14,24 @@ import {
   formatarPercentagemOuNulo,
 } from "@/lib/formatar";
 
+export const metadata: Metadata = { title: { absolute: "Visão geral · Armazém de calçado" } };
+
 export default function VisaoGeralPage({ searchParams }: PageProps<"/">) {
   return (
     <section>
       <h1 className="text-2xl font-semibold">Visão geral</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Indicadores calculados no servidor a partir dos CSV carregados pelo ETL. Passe o rato por um cartão para ver a
-        definição.
+        Indicadores calculados no servidor a partir dos CSV carregados pelo ETL. Clique num cartão para ver a definição.
       </p>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Suspense fallback={<CartoesACarregar />}>
-          <IndicadoresMinimos searchParams={searchParams} />
-        </Suspense>
-      </div>
       <div className="mt-6">
         <Suspense fallback={<div className="h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
           <Matriz searchParams={searchParams} />
+        </Suspense>
+      </div>
+      <h2 className="mt-10 text-lg font-semibold">Indicadores da encomenda</h2>
+      <div className="mt-4">
+        <Suspense fallback={<CartoesACarregar />}>
+          <IndicadoresMinimos searchParams={searchParams} />
         </Suspense>
       </div>
       <h2 className="mt-10 text-lg font-semibold">Evolução mensal por dia com atividade</h2>
@@ -71,13 +74,15 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
   const tamanhoMedio = formatarNumeroOuNulo(tamanho.valor);
   const porOnda = formatarNumeroOuNulo(pedidosPorOnda.valor);
   const multissetor = formatarPercentagemOuNulo(pedidosMultissetor.valor);
+  const limitacaoSetor = participacaoPorSetor.limitacao ?? pedidosMultissetor.limitacao;
   const resumoAbc = abc.classes.map((c) => `${c.classe} ${formatarNumero(c.referencias)}`).join(" / ");
   const setores = participacaoPorSetor.setores
     .map((s) => `${s.setor} ${formatarPercentagem(s.percentagem)}`)
     .join("; ");
 
   return (
-    <>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <CartaoIndicador titulo="Tamanho médio da encomenda" metadados={tamanho} valorResumo={tamanhoMedio}>
         <ValorIndicador texto={tamanhoMedio} unidade="un./pedido" />
         <DetalhesIndicador
@@ -99,11 +104,31 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
         />
       </CartaoIndicador>
 
+      <CartaoIndicador titulo="Pedidos por dia com atividade" metadados={volume.pedidos} valorResumo={pedidosDia}>
+        <ValorIndicador texto={pedidosDia} unidade="pedidos/dia" />
+        <DetalhesIndicador
+          detalhes={[
+            { rotulo: "Pedidos válidos", texto: formatarNumeroOuNulo(volume.pedidos.valor) },
+            { rotulo: "Dias com atividade", texto: formatarNumero(volume.pedidos.diasComAtividade) },
+          ]}
+        />
+      </CartaoIndicador>
+
+      <CartaoIndicador titulo="Unidades por dia com atividade" metadados={volume.unidades} valorResumo={unidadesDia}>
+        <ValorIndicador texto={unidadesDia} unidade="un./dia" />
+        <DetalhesIndicador
+          detalhes={[
+            { rotulo: "Unidades", texto: formatarNumeroOuNulo(volume.unidades.valor) },
+            { rotulo: "Dias com atividade", texto: formatarNumero(volume.unidades.diasComAtividade) },
+          ]}
+        />
+      </CartaoIndicador>
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <CartaoIndicador
         titulo="Participação por setor"
         metadados={participacaoPorSetor}
         valorResumo={setores || null}
-        limitacao={participacaoPorSetor.limitacao}
       >
         {participacaoPorSetor.setores.length === 0 ? (
           <ValorIndicador texto={null} />
@@ -123,7 +148,6 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
         titulo="Pedidos multissetor"
         metadados={pedidosMultissetor}
         valorResumo={multissetor}
-        limitacao={pedidosMultissetor.limitacao}
       >
         <ValorIndicador texto={multissetor} />
         <DetalhesIndicador
@@ -132,26 +156,6 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
               rotulo: "Pedidos multissetor",
               texto: `${formatarNumero(pedidosMultissetor.pedidosMultissetor)} de ${formatarNumero(pedidosMultissetor.pedidosValidos)}`,
             },
-          ]}
-        />
-      </CartaoIndicador>
-
-      <CartaoIndicador titulo="Pedidos por dia com atividade" metadados={volume.pedidos} valorResumo={pedidosDia}>
-        <ValorIndicador texto={pedidosDia} unidade="pedidos/dia" />
-        <DetalhesIndicador
-          detalhes={[
-            { rotulo: "Pedidos válidos", texto: formatarNumeroOuNulo(volume.pedidos.valor) },
-            { rotulo: "Dias com atividade", texto: formatarNumero(volume.pedidos.diasComAtividade) },
-          ]}
-        />
-      </CartaoIndicador>
-
-      <CartaoIndicador titulo="Unidades por dia com atividade" metadados={volume.unidades} valorResumo={unidadesDia}>
-        <ValorIndicador texto={unidadesDia} unidade="un./dia" />
-        <DetalhesIndicador
-          detalhes={[
-            { rotulo: "Unidades", texto: formatarNumeroOuNulo(volume.unidades.valor) },
-            { rotulo: "Dias com atividade", texto: formatarNumero(volume.unidades.diasComAtividade) },
           ]}
         />
       </CartaoIndicador>
@@ -182,7 +186,11 @@ async function IndicadoresMinimos({ searchParams }: { searchParams: PageProps<"/
           </tbody>
         </table>
       </CartaoIndicador>
-    </>
+      </div>
+      {limitacaoSetor && (
+        <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">{limitacaoSetor}</p>
+      )}
+    </div>
   );
 }
 
@@ -199,10 +207,10 @@ async function EvolucaoMensal({ searchParams }: { searchParams: PageProps<"/">["
 
 function CartoesACarregar() {
   return (
-    <>
-      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {[0, 1, 2, 3].map((i) => (
         <div key={i} className="h-40 animate-pulse rounded-lg border border-stone-200 bg-white" />
       ))}
-    </>
+    </div>
   );
 }

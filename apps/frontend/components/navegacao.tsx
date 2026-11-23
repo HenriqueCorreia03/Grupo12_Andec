@@ -16,7 +16,7 @@ export function Navegacao() {
   const pathname = usePathname();
   const filtros = consulta(filtrosDoUrl(useSearchParams()));
   return (
-    <nav aria-label="Páginas" className="mx-auto flex max-w-6xl gap-1 px-6">
+    <nav aria-label="Páginas" className="mx-auto flex max-w-6xl flex-wrap gap-x-1 px-6">
       {PAGINAS.map(({ href, titulo }) => {
         const ativa = pathname === href;
         return (
