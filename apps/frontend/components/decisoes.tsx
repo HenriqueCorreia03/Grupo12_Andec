@@ -5,7 +5,12 @@ import type {
   OndasIncompletas,
 } from "@/lib/api";
 import { consulta, type FiltrosUrl } from "@/lib/filtros";
+import type { ReactNode } from "react";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
+import { Grelha100, MiniBarras } from "./mini-graficos";
+
+const MES_CURTO = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const AZUL = "bg-[#2a78d6]";
 
 const MES_LONGO = [
   "janeiro",
@@ -27,6 +32,8 @@ interface Decisao {
   pergunta: string;
   destaque: string;
   unidadeDoDestaque: string;
+  /** Mini-gráfico para ler o cartão sem ler o texto. */
+  grafico?: ReactNode;
   leitura: string;
   decisao: string;
   ligacao: { texto: string; pagina: string; ancora?: string };
@@ -54,6 +61,7 @@ export function OutrasDecisoes({
   const decisoes: Decisao[] = [
     {
       id: "estabilidade",
+      grafico: <Grelha100 percentagem={estabilidade.valor} classe={AZUL} legenda="artigos mudam de classe de um mês para o seguinte" />,
       pergunta: "Reorganizar uma vez, ou rever as localizações periodicamente?",
       destaque: formatarPercentagemOuNulo(estabilidade.valor) ?? "sem dados",
       unidadeDoDestaque:
@@ -69,6 +77,13 @@ export function OutrasDecisoes({
     },
     {
       id: "onde-testar",
+      grafico: (
+        <MiniBarras
+          itens={[...divididos.meses]
+            .sort((x, y) => x.mes.localeCompare(y.mes))
+            .map((m) => ({ rotulo: MES_CURTO[Number(m.mes.slice(5)) - 1], valor: m.pedidosDivididos, destaque: m.mes === mes?.mes }))}
+        />
+      ),
       pergunta: "Onde testar primeiro uma regra nova para as ondas?",
       destaque:
         mes && dia && hora
@@ -89,6 +104,13 @@ export function OutrasDecisoes({
     },
     {
       id: "agrupar",
+      grafico: (
+        <Grelha100
+          percentagem={incompletas.ondasIncompletas === 0 ? null : (incompletas.ondasSimultaneas * 100) / incompletas.ondasIncompletas}
+          classe={AZUL}
+          legenda="ondas incompletas saíram à mesma hora que outra incompleta"
+        />
+      ),
       pergunta: "Há ondas incompletas (menos de 24 un.) que podiam ter saído juntas?",
       destaque: formatarNumero(incompletas.ondasSimultaneas),
       unidadeDoDestaque: `de ${formatarNumero(incompletas.ondasIncompletas)} ondas incompletas criadas à mesma hora que outra incompleta`,
@@ -127,7 +149,8 @@ export function OutrasDecisoes({
                 </span>
               )}
             </p>
-            <p className="mt-1 text-sm text-stone-600">{d.leitura}</p>
+            {d.grafico}
+            <p className="mt-2 text-sm text-stone-600">{d.leitura}</p>
             <p className="mt-3 text-sm text-stone-800">
               <span className="font-medium">Decisão que apoia: </span>
               {d.decisao}

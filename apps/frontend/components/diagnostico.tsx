@@ -3,6 +3,15 @@ import type { CriterioMedido, MatrizAlavancas } from "@/lib/api";
 import { COR_DO_ESTADO, type Criterio, type Estado, estadoDaNota, LEGENDA_DAS_CORES, palavraDaNota } from "@/lib/estado";
 import { consulta, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
+import { Grelha100 } from "./mini-graficos";
+
+/** Legenda da grelha "em cada 100" de cada pergunta: o que contam os quadrados pintados. */
+const LEGENDA_DA_GRELHA: Record<string, string> = {
+  "dispersao-a": "idas a artigos A são fora das 3 prateleiras habituais",
+  "divididos-b": "pedidos foram partidos quando cabiam numa onda",
+  "robustez-a": "unidades saem de sítios que estão no mapa",
+  "robustez-b": "linhas de encomenda encontram a sua recolha",
+};
 
 /** O que fazer em cada estado: texto fixo por nível, registado na spec (ticket 20), não uma conclusão escrita à mão. */
 type Acoes = Record<Estado, string>;
@@ -124,7 +133,8 @@ function CartaoDiagnostico({ pergunta: p, filtros }: { pergunta: Pergunta; filtr
         {formatarPercentagemOuNulo(valor) ?? "sem dados"}
         <span className="ml-1 text-sm font-normal text-stone-600">{p.unidadeDoValor}</span>
       </p>
-      <p className="mt-1 text-sm text-stone-600">{p.leitura}</p>
+      <Grelha100 percentagem={valor} classe={cor.marca} legenda={LEGENDA_DA_GRELHA[p.id] ?? ""} />
+      <p className="mt-2 text-sm text-stone-600">{p.leitura}</p>
       {avisoLimiar && (
         <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">⚠ {avisoLimiar}</p>
       )}
