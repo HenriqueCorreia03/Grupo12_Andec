@@ -22,8 +22,8 @@ export async function OndasIncompletasCartao({ filtros }: { filtros: FiltrosUrl 
       leitura={
         semDados
           ? null
-          : `${formatarNumero(dados.ondasIncompletas)} ondas incompletas (< 24 un., ${formatarPercentagemOuNulo(dados.percentagemIncompletas)} das ondas) ` +
-            `em ${formatarNumero(dados.gruposDiaHora)} grupos dia/hora; ${formatarNumero(dados.pedidosDivididosEnvolvidos)} pedidos divididos envolvidos.`
+          : `De ${formatarNumero(dados.ondasIncompletas)} ondas com menos de 24 un. (${formatarPercentagemOuNulo(dados.percentagemIncompletas)} das ondas), ` +
+            `em ${formatarNumero(dados.gruposDiaHora)} combinações de dia e hora; envolvem ${formatarNumero(dados.pedidosDivididosEnvolvidos)} pedidos partidos.`
       }
     >
       <ValorIndicador texto={valor} unidade="ondas" />

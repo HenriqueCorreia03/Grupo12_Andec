@@ -61,8 +61,8 @@ export async function PrioridadeArtigos({ filtros }: { filtros: FiltrosUrl }) {
         </figcaption>
         {primeiro && (
           <p className="mt-1 text-sm text-stone-700">
-            O <strong>{primeiro.referencia}</strong> lidera: {formatarNumero(primeiro.paragens)} paragens em{" "}
-            {formatarNumero(primeiro.localizacoesDistintas)} localizações diferentes. É por aqui que começa a reorganização.
+            O <strong>{primeiro.referencia}</strong> é o primeiro: foi buscado {formatarNumero(primeiro.paragens)} vezes, a{" "}
+            {formatarNumero(primeiro.localizacoesDistintas)} sítios diferentes. É por aqui que começa a reorganização.
           </p>
         )}
         <div className="mt-3">

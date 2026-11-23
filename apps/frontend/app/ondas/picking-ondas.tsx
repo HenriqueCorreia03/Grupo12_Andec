@@ -29,17 +29,16 @@ export async function CartoesDePicking({ filtros }: { filtros: FiltrosUrl }) {
         metadados={ocupacao}
         valorResumo={valorOcupacao}
         leitura={
-          `${formatarNumero(ocupacao.ondasCom24)} de ${formatarNumero(ocupacao.ondas)} ondas com 24 un. ` +
-          `(${formatarPercentagemOuNulo(ocupacao.percentagemCom24) ?? "sem dados"}); ` +
-          `${formatarNumero(ocupacao.ondasMaisDe24)} com > 24 un.; mín./máx. ` +
-          `${formatarNumeroOuNulo(ocupacao.minimo) ?? "-"} / ${formatarNumeroOuNulo(ocupacao.maximo) ?? "-"} un.`
+          `${formatarNumero(ocupacao.ondasCom24)} de ${formatarNumero(ocupacao.ondas)} ondas saem com 24 un. certas ` +
+          `(${formatarPercentagemOuNulo(ocupacao.percentagemCom24) ?? "sem dados"}) e ${formatarNumero(ocupacao.ondasMaisDe24)} com mais de 24; ` +
+          `a mais pequena leva ${formatarNumeroOuNulo(ocupacao.minimo) ?? "-"} un. e a maior ${formatarNumeroOuNulo(ocupacao.maximo) ?? "-"}.`
         }
       >
         <ValorIndicador texto={valorOcupacao} unidade="de 24 un." />
       </CartaoIndicador>
 
       <CartaoIndicador titulo="Paragens" metadados={paragens} valorResumo={valorParagens}>
-        <ValorIndicador texto={valorParagens} unidade="pares (onda, localização)" />
+        <ValorIndicador texto={valorParagens} unidade="idas às prateleiras (onda × localização)" />
       </CartaoIndicador>
 
       <CartaoIndicador

@@ -22,7 +22,8 @@ export default function OndasPage({ searchParams }: PageProps<"/ondas">) {
     <section>
       <h1 className="text-2xl font-semibold">Ondas e pedidos</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Alavanca (b). Os indicadores principais primeiro; o detalhe vem por baixo. Clique num cartão para ver a definição.
+        Ideia (b): mudar a forma como as ondas são constituídas. Os números principais primeiro e o detalhe por baixo.
+        Clique num cartão para ver a definição.
       </p>
       <Suspense fallback={<div className="mt-6"><FaixaKpiACarregar cartoes={5} /></div>}>
         <ConteudoDasOndas searchParams={searchParams} />
@@ -78,15 +79,15 @@ async function PedidosDivididosCartao({ filtros }: { filtros: FiltrosUrl }) {
   const evitaveis =
     d.percentagemAte24 === null
       ? ""
-      : `; ${formatarNumero(d.divididosAte24)} evitáveis (≤ 24 un., ${formatarPercentagemOuNulo(d.percentagemAte24)} dos pedidos)`;
+      : `; ${formatarNumero(d.divididosAte24)} cabiam numa só onda (até 24 un., ${formatarPercentagemOuNulo(d.percentagemAte24)} dos pedidos)`;
   return (
     <CartaoIndicador
       titulo="Pedidos divididos entre ondas"
       metadados={d}
       valorResumo={percentagem}
       leitura={
-        `${formatarNumero(d.pedidosDivididos)} de ${formatarNumero(d.pedidosValidos)} pedidos; ` +
-        `${formatarNumero(d.divididosMaisDe24)} inevitáveis (> 24 un.)${evitaveis}.`
+        `${formatarNumero(d.pedidosDivididos)} de ${formatarNumero(d.pedidosValidos)} pedidos saíram em mais de uma onda: ` +
+        `${formatarNumero(d.divididosMaisDe24)} tinham mais de 24 un. e não cabiam numa só${evitaveis}.`
       }
     >
       <ValorIndicador texto={percentagem} />

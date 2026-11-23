@@ -16,8 +16,8 @@ export default function QualidadePage({ searchParams }: PageProps<"/qualidade">)
     <section>
       <h1 className="text-2xl font-semibold">Qualidade dos dados e limitações</h1>
       <p className="mt-1 text-sm text-stone-500">
-        Exclusões, decomposições e limitações do dataset completo, calculadas no servidor a partir dos CSV carregados
-        pelo ETL. Os números principais primeiro; o detalhe vem por baixo.
+        Até que ponto se pode confiar nos números: o que falta, o que foi excluído e porquê, sobre todo o histórico.
+        Os números principais primeiro e o detalhe por baixo.
       </p>
       <Suspense fallback={<div className="mt-6 h-64 animate-pulse rounded-lg border border-stone-200 bg-white" />}>
         <ConteudoQualidade searchParams={searchParams} />
@@ -63,12 +63,12 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
             leitura={`Encomendado ${formatarNumero(r.encomendado)} un.; recolhido ${formatarNumero(r.recolhido)} un.`}
           />
           <CartaoResumo
-            titulo="Linhas do CO sem correspondência no PW"
+            titulo="Linhas de encomenda sem recolha correspondente"
             valor={formatarPercentagemOuNulo(c.percentagemSemCorrespondencia)}
-            leitura={`${formatarNumero(c.linhasSemCorrespondencia)} de ${formatarNumero(c.linhasCO)} linhas do Customer_Order.`}
+            leitura={`${formatarNumero(c.linhasSemCorrespondencia)} de ${formatarNumero(c.linhasCO)} linhas de encomenda não encontram a sua recolha no picking.`}
           />
           <CartaoResumo
-            titulo="Recolhido em localizações não mapeadas"
+            titulo="Recolhido em sítios fora do mapa"
             valor={formatarPercentagemOuNulo(naoMapeadas.percentagemRecolhido)}
             unidade="do recolhido"
             leitura={
@@ -85,7 +85,7 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
           <CartaoResumo
             titulo="Ligações repartidas por várias zonas"
             valor={formatarPercentagemOuNulo(ligacoesRepartidas.valor)}
-            leitura={`${formatarNumero(ligacoesRepartidas.linhasRepartidas)} de ${formatarNumero(ligacoesRepartidas.linhasLigadas)} linhas ligadas.`}
+            leitura={`${formatarNumero(ligacoesRepartidas.linhasRepartidas)} de ${formatarNumero(ligacoesRepartidas.linhasLigadas)} linhas foram recolhidas em mais do que uma zona.`}
           />
         </FaixaKpi>
       </div>
