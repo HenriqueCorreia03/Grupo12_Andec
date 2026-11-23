@@ -52,7 +52,7 @@ export default function ArtigosPage({ searchParams }: PageProps<"/artigos">) {
           <PrioridadeDoPeriodo searchParams={searchParams} />
         </Suspense>
       </div>
-      <h2 className="mt-10 text-lg font-semibold">Estabilidade do ABC mensal</h2>
+      <h2 id="estabilidade" className="mt-10 scroll-mt-4 text-lg font-semibold">Estabilidade do ABC mensal</h2>
       <div className="mt-4">
         <Suspense fallback={CARREGAR}>
           <EstabilidadeDoPeriodo searchParams={searchParams} />
