@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { ErroApi } from "@/components/erro-api";
+import Link from "next/link";
 import { CartaoResumo, FaixaKpi } from "@/components/faixa-kpi";
 import { TabelaRecolhida } from "@/components/tabela-recolhida";
 import { VerDetalhe } from "@/components/ver-detalhe";
-import { obterQualidade, type Qualidade } from "@/lib/api";
-import { filtrosDeObjeto } from "@/lib/filtros";
+import { obterQualidade, obterSensibilidadeDuplicados, type Qualidade } from "@/lib/api";
+import { consulta, filtrosDeObjeto, type FiltrosUrl } from "@/lib/filtros";
 import { formatarNumero, formatarPercentagemOuNulo } from "@/lib/formatar";
 
 export const metadata: Metadata = { title: "Qualidade dos dados" };
@@ -26,7 +27,10 @@ export default function QualidadePage({ searchParams }: PageProps<"/qualidade">)
 }
 
 async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/qualidade">["searchParams"] }) {
-  const filtros = filtrosDeObjeto(await searchParams);
+  const params = await searchParams;
+  const filtros = filtrosDeObjeto(params);
+  // O alternador do ticket 17 é só desta página: não é um filtro global e não passa para as outras.
+  const semDuplicados = params.duplicados === "sem";
   let q: Qualidade;
   try {
     q = await obterQualidade(filtros);
@@ -184,6 +188,10 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
           </p>
         </Seccao>
 
+        <Suspense fallback={<div className="h-48 animate-pulse rounded-lg border border-stone-200 bg-white lg:col-span-2" />}>
+          <SensibilidadeDuplicados semDuplicados={semDuplicados} filtros={filtros} />
+        </Suspense>
+
         <Seccao titulo="Limitações conhecidas">
           <ol className="list-decimal space-y-1 pl-5 text-sm text-stone-700">
             {q.limitacoes.map((l) => (
@@ -201,6 +209,98 @@ async function ConteudoQualidade({ searchParams }: { searchParams: PageProps<"/q
         </Seccao>
       </div>
     </>
+  );
+}
+
+/**
+ * Sensibilidade aos duplicados (ticket 17): o alternador mostra o tamanho médio e o ABC com a regra escolhida e,
+ * ao lado, a diferença para a regra principal. O resto da aplicação usa sempre "com duplicados".
+ */
+async function SensibilidadeDuplicados({ semDuplicados, filtros }: { semDuplicados: boolean; filtros: FiltrosUrl }) {
+  let dados: Awaited<ReturnType<typeof obterSensibilidadeDuplicados>>;
+  try {
+    dados = await obterSensibilidadeDuplicados();
+  } catch (e) {
+    return (
+      <div className="lg:col-span-2">
+        <ErroApi mensagem={(e as Error).message} />
+      </div>
+    );
+  }
+  const atual = semDuplicados ? dados.sem : dados.com;
+  const t = atual.tamanhoMedioEncomenda;
+  const tCom = dados.com.tamanhoMedioEncomenda;
+  const classeCom = (classe: string) => dados.com.abc.classes.find((c) => c.classe === classe);
+  const opcao = (sem: boolean, rotulo: string) => {
+    const ativa = sem === semDuplicados;
+    return (
+      <Link
+        href={`/qualidade${consulta(filtros, { duplicados: sem ? "sem" : null })}`}
+        aria-current={ativa ? "true" : undefined}
+        scroll={false}
+        className={`rounded px-3 py-1.5 text-sm ${ativa ? "bg-stone-900 text-white" : "text-stone-700 hover:bg-stone-100"}`}
+      >
+        {rotulo}
+      </Link>
+    );
+  };
+
+  return (
+    <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm lg:col-span-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-medium text-stone-500">Sensibilidade aos duplicados</h2>
+        <nav aria-label="Regra dos duplicados" className="inline-flex gap-1 rounded-md border border-stone-300 p-0.5">
+          {opcao(false, "Com duplicados (regra principal)")}
+          {opcao(true, "Sem duplicados")}
+        </nav>
+      </div>
+      <p className="mt-2 text-sm text-stone-700">
+        {semDuplicados
+          ? "Sem as linhas do Customer_Order idênticas a outra. Só esta secção muda: o resto da aplicação usa sempre a regra principal, com duplicados."
+          : "As linhas idênticas do Customer_Order contam como reais. É a regra usada em toda a aplicação."}
+      </p>
+
+      <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-[1fr_2fr]">
+        <div>
+          <p className="text-xs text-stone-500">Tamanho médio da encomenda</p>
+          <p className="mt-1 text-3xl font-semibold tabular-nums">{t.valor === null ? "sem dados" : `${formatarNumero(t.valor)} un.`}</p>
+          <p className="mt-1 text-xs text-stone-500">
+            {formatarNumero(t.pedidosConsiderados)} pedidos
+            {semDuplicados && tCom.valor !== null && <> · com duplicados: {formatarNumero(tCom.valor)} un.</>}
+          </p>
+        </div>
+        <table className="w-full text-sm">
+          <caption className="text-left text-xs text-stone-500">Classificação ABC (dataset completo)</caption>
+          <thead>
+            <tr className="text-left text-stone-500">
+              <th className="py-1 font-normal">Classe</th>
+              <th className="py-1 text-right font-normal">Referências</th>
+              <th className="py-1 text-right font-normal">Unidades</th>
+              <th className="py-1 text-right font-normal">% das unidades</th>
+              {semDuplicados && <th className="py-1 text-right font-normal">Com duplicados</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {atual.abc.classes.map((c) => {
+              const com = classeCom(c.classe);
+              return (
+                <tr key={c.classe} className="border-t border-stone-100">
+                  <td className="py-1 font-medium">{c.classe}</td>
+                  <td className="py-1 text-right tabular-nums">{formatarNumero(c.referencias)}</td>
+                  <td className="py-1 text-right tabular-nums">{formatarNumero(c.unidades)}</td>
+                  <td className="py-1 text-right tabular-nums">{formatarPercentagemOuNulo(c.percentagemUnidades) ?? "sem dados"}</td>
+                  {semDuplicados && (
+                    <td className="py-1 text-right tabular-nums text-stone-500">
+                      {com ? `${formatarNumero(com.referencias)} ref. · ${formatarPercentagemOuNulo(com.percentagemUnidades) ?? "sem dados"}` : "—"}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </article>
   );
 }
 
