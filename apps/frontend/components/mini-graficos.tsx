@@ -180,3 +180,51 @@ export function BarraSegmentos({
     </figure>
   );
 }
+
+/**
+ * Uma onda como 24 lugares (a capacidade de referência): um quadrado por unidade recolhida, até 24. A laranja se a
+ * onda está incompleta, a azul com 24 certas e a cinzento acima de 24 (o excesso aparece como "+n").
+ */
+export function Onda24({
+  unidades,
+  grande = false,
+}: {
+  unidades: number;
+  grande?: boolean;
+}) {
+  const CAPACIDADE = 24;
+  const cheios = Math.min(unidades, CAPACIDADE);
+  const excesso = Math.max(0, unidades - CAPACIDADE);
+  const cor =
+    unidades < CAPACIDADE
+      ? "bg-amber-500"
+      : unidades === CAPACIDADE
+        ? "bg-[#2a78d6]"
+        : "bg-stone-500";
+  const lado = grande ? "h-3.5 w-3.5" : "h-2 w-2";
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 align-middle"
+      title={`${unidades} de ${CAPACIDADE} unidades`}
+      aria-label={`${unidades} de ${CAPACIDADE} unidades`}
+    >
+      <span
+        className={`grid grid-cols-12 ${grande ? "gap-[3px]" : "gap-px"}`}
+        aria-hidden="true"
+      >
+        {Array.from({ length: CAPACIDADE }, (_, i) => (
+          <span
+            key={i}
+            className={`${lado} rounded-[1px] ${i < cheios ? cor : "bg-stone-200"}`}
+          />
+        ))}
+      </span>
+      <span className="tabular-nums" aria-hidden="true">
+        {unidades}/{CAPACIDADE}
+        {excesso > 0 && (
+          <span className="ml-0.5 text-stone-500">(+{excesso})</span>
+        )}
+      </span>
+    </span>
+  );
+}

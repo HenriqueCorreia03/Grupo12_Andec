@@ -87,7 +87,7 @@ async function PedidosDivididosCartao({ filtros }: { filtros: FiltrosUrl }) {
       valorResumo={percentagem}
       grafico={
         <BarraSegmentos
-          titulo={`${formatarNumero(d.pedidosValidos)} pedidos`}
+          titulo={`${formatarNumero(d.pedidosValidos)} ${d.pedidosValidos === 1 ? "pedido" : "pedidos"}`}
           segmentos={[
             { valor: d.pedidosValidos - d.pedidosDivididos, rotulo: "saíram numa só onda", classe: "bg-stone-300" },
             { valor: d.divididosMaisDe24, rotulo: "divididos, mas tinham mais de 24 un. (não cabiam numa onda)", classe: "bg-[#86b6ef]" },
